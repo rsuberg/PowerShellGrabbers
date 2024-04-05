@@ -4,10 +4,6 @@ $host.PrivateData.ErrorForegroundColor = 'White'
 $ErrorActionPreference = 'Continue'
 $Global
 
-if($env:OneDriveCommercial -like "*OnlineStorage*") { #Run My Unique Commands
-	&$env:OneDriveConsumer\Portable-Progs\Bginfo.exe $env:OneDriveConsumer\Portable-Progs\BGInfo.bgi /timer:2 /nolicprompt
-}
-
 Function Show-InstalledPrograms { Param([switch]$AllFields, [switch]$Table, [switch]$Quiet)
 	$List = @()
 	"Est is KB"
