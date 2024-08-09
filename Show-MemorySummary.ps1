@@ -102,7 +102,7 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
 	If($UsedSlots -eq $TotalSlots) { 
 	    	Write-Host "All memory slots are in use. No available slots!" -ForegroundColor Yellow 
 	} 
-
+	Write-Host
 }
 
 function Show-ProcessorSummary {
