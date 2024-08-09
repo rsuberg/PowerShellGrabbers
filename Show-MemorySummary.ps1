@@ -71,7 +71,9 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
 	) 
 	#cls 
 	$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" -ComputerName $Computername 
-	 
+
+  	Get-WmiObject Win32_PhysicalMemoryArray | Format-List MaxCapacity, MemoryDevices, MemoryErrorCorrection, Tag, Use, Location
+
 	Write-Host "Memory Modules:" -ForegroundColor Green 
 	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}# , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType, Manufacturer, Model, PartNumber, SerialNumber 
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
@@ -100,13 +102,11 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
 	If($UsedSlots -eq $TotalSlots) { 
 	    	Write-Host "All memory slots are in use. No available slots!" -ForegroundColor Yellow 
 	} 
-#}
 
+}
 
-#Clear-Host
-#Show-MemorySummary
-get-wmiobject Win32_PhysicalMemoryArray | Format-List MaxCapacity, MemoryDevices, MemoryErrorCorrection, Tag, Use, Location
-Get-WmiObject Win32_Processor | Select-Object DeviceID, ProcessorType, Version, Caption, Characteristics, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, SecondLevelAddressTranslationExtensions, ThreadCount,  UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions | Format-List
+function Show-ProcessorSummary {
+	Get-WmiObject Win32_Processor | Select-Object DeviceID, ProcessorType, Version, Caption, Characteristics, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, SecondLevelAddressTranslationExtensions, ThreadCount,  UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions | Format-List
 }
 
 Clear-Host; Show-MemorySummary
