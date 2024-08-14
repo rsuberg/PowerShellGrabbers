@@ -1,4 +1,4 @@
-﻿$acc_token = ""
+$acc_token = ""
 $content_arr = ""
 
 Function Dell-Authorize {

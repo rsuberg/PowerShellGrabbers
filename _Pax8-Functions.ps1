@@ -1,4 +1,3 @@
-﻿
 #Pax8 API Demo - Functions
 $Global:token = ""
 $Global:allprod = @()
