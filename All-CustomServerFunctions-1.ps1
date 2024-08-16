@@ -69,7 +69,7 @@ Function Show-ServerStatus {
 	$ErrorActionPreference = "Continue"
 	if( $env:USERDNSDOMAIN.length -ne 0) {"Domain Joined"} else {"Not a domain menber"}
 	#Test not reliable. Test ( $env:userdomain -eq $env:COMPUTERNAME )
-	$sc = (Get-SmbShare | where name -NotLike "*$").count
+	$sc = (Get-SmbShare | Where-Object name -NotLike "*$").count
 	if($sc -ne 0) {"Viewable Shares exist - $sc  found." } else {"No public shares reported"}
 	Write-Host "ComputerName   :  $env:COMPUTERNAME"
 	Write-Host "LOGONSERVER    :  $env:LOGONSERVER"
@@ -77,11 +77,16 @@ Function Show-ServerStatus {
 	Write-Host "USERDOMAIN     :  $env:USERDOMAIN"
 }
 
-function Show-AvailableCustomfunctions {
+function Show-AvailableCustomfunctions { param([switch]$NoSort)
 	write-output " "
-	Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
+	if($NoSort) {
+		Get-Item -Path function:\  | sort Name | findstr "Show- Dell- Pax8- WMI- DellOMSA-"
+	} else {
+		Get-Item -Path function:\  | findstr "Show- Dell- Pax8- WMI- DellOMSA-" | Sort.exe 
+	}
 	write-output " "
 }
+
 
 function Show-RunningVMInfo {
 	Get-VM | where state -eq "Running" | ft VMName, @{e=$_.AutomaticStartAction;l="StopAction"}, @{e=$_.AutomaticStopAction;l="StopAction"}, MemoryStartup, MemoryAssigned, OperationalStatus, State, ProcessorCount, Name, ComputerName, Notes -AutoSize -Wrap
@@ -256,12 +261,6 @@ Function Show-DriveList { # TODO: Explain DriveType, MediaType
 	gwmi win32_pnpentity | where pnpclass -eq "CDROM" | select caption, name, present, status, statusinfo | ft
 }
 
-function Show-AvailableCustomfunctions {
-	write-output " "
-	Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
-	write-output " "
-}
-
 Function Show-ShareInfo { param ([switch]$ShowSize, [switch]$OnlyFolders, [switch]$OnlyPrinters, [switch]$IndividualSize, [switch]$Quiet, [switch]$Listing, [switch]$Table, [switch]$CSV)
 	if($Quiet) {$ErrAct = "SilentlyContinue"} else {$ErrAct = $ErrorActionPreference}
 	$Shares = Get-SmbShare | where name -notlike "*$" | sort ShareType, Path #| ft Name, Path, ShareType
@@ -378,8 +377,8 @@ Function Show-InstalledWindowsFeatures { Param([switch]$Clipboard, [switch]$CSV,
 }
 
 function Find-Files { param([parameter(Mandatory=$true)][string]$FileSpec)
-	$Drives = (Get-Volume | where drivetype -eq "Fixed").DriveLetter
-	$Drives = (Get-Volume | where drivetype -eq "Fixed").DriveLetter 
+	$Drives = (Get-Volume | Where-Object drivetype -eq "Fixed").DriveLetter
+	$Drives = (Get-Volume | Where-Object drivetype -eq "Fixed").DriveLetter 
 	$Drives = $Drives -join(":\,") -split(",")
 	$Drives = $drives[0..($drives.count - 2)]
 	Write-Host "Drives: "$Drives
@@ -397,7 +396,7 @@ function Find-Files { param([parameter(Mandatory=$true)][string]$FileSpec)
 &{Clear-Host 
 $PSVersionTable.PSVersion
 if($PSVersionTable.PSVersion.Major -lt 3.0) {Write-Host " PS Version too low " -ForegroundColor White -BackgroundColor Red}
-Show-AvailableCustomfunctions | ft
+Show-AvailableCustomfunctions | Format-Table
 }
 
 # Get-ADUser -Filter 'enabled -eq "true"' -Property * | select DisplayName, SamAccountName, Enabled, EmailAddress, LockedOut | ft -AutoSize
@@ -406,10 +405,10 @@ Show-AvailableCustomfunctions | ft
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -Like "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 # 
-$fpath = (Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
+$fpath = (Get-SmbShare | Where-Object {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
 $fpath | % {
 	$sz = Get-ChildItem $_ -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum
 	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $_
 	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
 	$sz
-}  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
+}  | Format-Table @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize

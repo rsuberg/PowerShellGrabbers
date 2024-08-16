@@ -41,7 +41,7 @@ Function WMI-Memory {
 Function WMI-CaseInfo {
 	$Arr_ChassisType = @("0-x", "Other", "Unknown", "Desktop", "Low Profile Desktop", "Pizza Box", "Mini Tower", "Tower", "Portable", "Laptop", "Notebook", "Hand Held", "Docking Station", "All in One", "Sub Notebook ", "Space-Saving", "Lunch Box", "Main System Chassis", "Expansion Chassis", "SubChassis", "Bus Expansion Chassis", "Peripheral Chassis", "Storage Chassis", "Rack Mount Chassis", "Sealed-Case PC", "Tablet", "Convertible", "Detachable")
 	$a = Get-WmiObject Win32_SystemEnclosure | select Name, Tag, Caption, ChassisTypes, LockPresent, Manufacturer, SKU, VisibleAlarm, SerialNumber
-	$a.ChassisTypes = $Arr_ChassisType[$a.ChassisTypes]
+	$a.ChassisTypes = $Arr_ChassisType[$a.ChassisTypes[0]]
 	$a 
 }
 

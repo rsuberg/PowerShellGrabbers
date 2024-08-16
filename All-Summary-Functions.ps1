@@ -883,9 +883,13 @@ function Show-AllCustomFunctions {
 	$Global:FunctionProcess = "None"
 }
 
-function Show-AvailableCustomfunctions {
+function Show-AvailableCustomfunctions { param([switch]$NoSort)
 	write-output " "
-	Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
+	if($NoSort) {
+		Get-Item -Path function:\  | sort Name | findstr "Show- Dell- Pax8- WMI- DellOMSA-"
+	} else {
+		Get-Item -Path function:\  | findstr "Show- Dell- Pax8- WMI- DellOMSA-" | Sort.exe 
+	}
 	write-output " "
 }
 
