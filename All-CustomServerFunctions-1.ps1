@@ -396,7 +396,7 @@ function Find-Files { param([parameter(Mandatory=$true)][string]$FileSpec)
 &{Clear-Host 
 $PSVersionTable.PSVersion
 if($PSVersionTable.PSVersion.Major -lt 3.0) {Write-Host " PS Version too low " -ForegroundColor White -BackgroundColor Red}
-Show-AvailableCustomfunctions | Format-Table
+Show-AvailableCustomfunctions -NoSort | Format-Table
 }
 
 # Get-ADUser -Filter 'enabled -eq "true"' -Property * | select DisplayName, SamAccountName, Enabled, EmailAddress, LockedOut | ft -AutoSize
