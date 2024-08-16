@@ -1011,6 +1011,6 @@ Total Internal Drive : 1
 &{Clear-Host 
 $PSVersionTable.PSVersion
 if($PSVersionTable.PSVersion.Major -lt 3.0) {Write-Host " PS Version too low " -ForegroundColor White -BackgroundColor Red}
-Show-AvailableCustomfunctions | ft
+Show-AvailableCustomfunctions -NoSort | ft
 }
 
