@@ -109,4 +109,4 @@ function Show-ProcessorSummary {
 	Get-WmiObject Win32_Processor | Select-Object DeviceID, ProcessorType, Version, Caption, Characteristics, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, SecondLevelAddressTranslationExtensions, ThreadCount,  UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions | Format-List
 }
 
-Clear-Host; Show-MemorySummary
+Clear-Host; Show-AvailableCustomFunctions
