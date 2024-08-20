@@ -7,7 +7,7 @@ Function WMI-OperatingSystemDetails {
 Function WMI-Processor {
 	$a = Get-WmiObject win32_processor | select Availability, CpuStatus, DeviceID, ExtClock, MaxClockSpeed, CurrentClockSpeed, PowerManagementSupported, ProcessorType, SocketDesignation, Architecture, Description, 	Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, Role, SecondLevelAddressTranslationExtensions, UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions
 	if ($a.count -eq $null) {$c = 1;$b=$a} else {$c = $a.count;$b=$a[0]}
-	Write-Host "CPU Chips: $c" -nonewline
+	Write-Output "CPU Chips: $c" -nonewline
 	$b | Add-Member -MemberType NoteProperty -Name SLAT -Value $b.SecondLevelAddressTranslationExtensions
 	$b = $b | Select-Object -Property * -ExcludeProperty SecondLevelAddressTranslationExtensions
 	$b | Format-List 
@@ -35,7 +35,7 @@ Function WMI-Memory {
 	$a = Get-WmiObject Win32_PhysicalMemory 
 	$a | Format-Table -AutoSize BankLabel, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Caption, DeviceLocator, FormFactor, Manufacturer, MemoryType, Model, PartNumber, SerialNumber, PositionInRow, Speed, SKU, Tag, TypeDetail 
 	$b = ($a.capacity | Measure-Object -sum).sum/(1048576*1024)
-	Write-Host "TotalCapacity: $b GB`n" 
+	Write-Output "TotalCapacity: $b GB`n" 
 }
 
 Function WMI-CaseInfo {
