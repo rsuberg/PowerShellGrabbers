@@ -338,7 +338,7 @@ $b = $b.Replace("Caption","CPU Family")
 $b = $b.Replace("Name","CPU Name")
 $b=$b.Replace("{","")
 $c = $c + $b.Replace("}",",")
-$a=gwmi win32_computersystem | select BootupState, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber
+$a=gwmi win32_computersystem | select BootupState, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber, TotalPhysicalMemory, @{l="TotalMemoryInGB";e={[math]::round($_.TotalPhysicalMemory/1073741824)}}
 $b=$a | ConvertTo-Json -Depth 1
 $b=$b.replace("Manufacturer","Case Manufacturer")
 $b=$b.Replace("{","")
@@ -777,10 +777,10 @@ function Show-EOLInfo {
     $Data | Add-Member -MemberType NoteProperty -Name Model -Value (Get-WmiObject win32_computersystem).model
     $Data | Add-Member -MemberType NoteProperty -Name SerialNo -Value (Get-WmiObject win32_bios).serialnumber
     $Data | Add-Member -MemberType NoteProperty -Name OperatingSystem -Value (gwmi win32_operatingsystem ).name.split('|')[0]
-	$Data | Add-Member -MemberType NoteProperty -Name TPM-Present -Value (Get-Tpm).TpmPresent
-	$Data | Add-Member -MemberType NoteProperty -Name TPM-Ready -Value (Get-Tpm).TpmReady
-	$Data | Add-Member -MemberType NoteProperty -Name TPM-Enabled -Value (Get-Tpm).TpmEnabled
-	$Data | Add-Member -MemberType NoteProperty -Name TPM-Ver20 -Value (Get-Tpm).ManufacturerVersionFull20
+	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Present -Value (Get-Tpm).TpmPresent
+	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Ready -Value (Get-Tpm).TpmReady
+	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Enabled -Value (Get-Tpm).TpmEnabled
+	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Ver20 -Value (Get-Tpm).ManufacturerVersionFull20
 	$Data | Add-Member -MemberType NoteProperty -Name ChassisStyle -value  ($Arr_ChassisType[(Get-WmiObject Win32_SystemEnclosure).ChassisTypes]).replace("{","").Replace("}","")
     $DrvA =""
     $c=""
@@ -815,6 +815,7 @@ function Show-EOLInfo {
 	Show-Monitors
 	Show-DiskPartitions | sort DriveLetter | select DriveLetter, VolumeName, Partition, DiskModel | fl
     return $Data
+	$Data
 } 
 
 function Show-Battery {
@@ -883,13 +884,9 @@ function Show-AllCustomFunctions {
 	$Global:FunctionProcess = "None"
 }
 
-function Show-AvailableCustomfunctions { param([switch]$NoSort)
+function Show-AvailableCustomfunctions {
 	write-output " "
-	if($NoSort) {
-		Get-Item -Path function:\  | sort Name | findstr "Show- Dell- Pax8- WMI- DellOMSA-"
-	} else {
-		Get-Item -Path function:\  | findstr "Show- Dell- Pax8- WMI- DellOMSA-" | Sort.exe 
-	}
+	Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
 	write-output " "
 }
 
@@ -937,7 +934,9 @@ Function ExplainArray { param ([ValidateSet("HDType","MediaType","SysSlotUsage",
 }
 
 Function Show-Processor {
-	gwmi win32_processor | select DeviceID, LoadPercentage, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, ThreadCount, UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions | fl
+	$cpus = gwmi win32_processor | select DeviceID, LoadPercentage, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, ThreadCount, UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtension
+	if ($cpus.count -gt 1) { $cpu=$cpus[0]; $cpu | Add-Member -MemberType NoteProperty -Name Count -Value $cpus.count}  else {$cpu = $cpus; $cpu | Add-Member -MemberType NoteProperty -Name Count -Value 1}
+	$cpu
 }
 
 Function Show-DiskSmartInfo {
@@ -1011,6 +1010,6 @@ Total Internal Drive : 1
 &{Clear-Host 
 $PSVersionTable.PSVersion
 if($PSVersionTable.PSVersion.Major -lt 3.0) {Write-Host " PS Version too low " -ForegroundColor White -BackgroundColor Red}
-Show-AvailableCustomfunctions -NoSort | ft
+Show-AvailableCustomfunctions | ft
 }
 
