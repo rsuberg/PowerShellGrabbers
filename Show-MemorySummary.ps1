@@ -75,7 +75,6 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
   	Get-WmiObject Win32_PhysicalMemoryArray | Format-List MaxCapacity, MemoryDevices, MemoryErrorCorrection, Tag, Use, Location
 
 	Write-Host "Memory Modules:" -ForegroundColor Green 
-	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}# , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType, Manufacturer, Model, PartNumber, SerialNumber 
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
 	 
     $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
