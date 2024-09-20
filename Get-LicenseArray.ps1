@@ -1,4 +1,5 @@
-﻿function Get-LicArray { param ([switch]$ShowEmail, [switch]$AllAccounts)
+﻿
+function Get-LicArray { param ([switch]$ShowEmail, [switch]$AllAccounts)
 <#
 
 .DESCRIPTION
@@ -69,7 +70,7 @@ Write-Host "`nAvailable License types:"
 $accsku.AccountSkuId
 
 Write-Host 
-$acclic | select AccountSkuId, ActiveUnits, ConsumedUnits ## Print License Counts
+$acclic | Select-Object AccountSkuId, ActiveUnits, ConsumedUnits ## Print License Counts
 $licL=@($accsku.accountskuid)
 ## Investigate removing brand from AccountskuyID
 #We now have AccountSkuID Broken into the plan type as an array
