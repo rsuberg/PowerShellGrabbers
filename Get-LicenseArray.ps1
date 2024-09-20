@@ -1,4 +1,4 @@
-﻿
+﻿# "Export Offlice Licenses to CSV"
 function Get-LicArray { param ([switch]$ShowEmail, [switch]$AllAccounts)
 <#
 
