@@ -75,4 +75,4 @@ Function WMI-NetAdapter {
 # [int](((gwmi win32_logicaldisk | select size | Measure-Object size -Sum).sum / 1073741824)*100)/100
 # Calculate total used space across all in GB:
 #$a = (gwmi win32_logicaldisk | select size | Measure-Object size -Sum).sum; $b = (gwmi win32_logicaldisk | select FreeSpace | Measure-Object FreeSpace -Sum).Sum; [int]((($a-$b)/1073741824)*100)/100
-Show-WMIFunctions
+#Show-WMIFunctions

@@ -1,5 +1,4 @@
-
-function Get-LicArray { param ([switch]$ShowEmail, [switch]$AllAccounts)
+﻿function Get-LicArray { param ([switch]$ShowEmail, [switch]$AllAccounts)
 <#
 
 .DESCRIPTION
