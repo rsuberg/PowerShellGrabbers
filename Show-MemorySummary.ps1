@@ -71,15 +71,20 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
 	) 
 	#cls 
 	$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" -ComputerName $Computername 
-
-  	Get-WmiObject Win32_PhysicalMemoryArray | Format-List MaxCapacity, MemoryDevices, MemoryErrorCorrection, Tag, Use, Location
-
+	 
 	Write-Host "Memory Modules:" -ForegroundColor Green 
+	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
 	 
     $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
 
-    Write-Host "Max Memory         : "  -ForegroundColor Green -NoNewline
+    $MaxMem = ($WmiSlots.MaxCapacityEx)/1MB
+    Write-Host "Max Memory         : " -ForegroundColor Green -NoNewline
+	Write-Host "$MaxMem GB"  
+	Write-Host "Max Memory         : " -ForegroundColor Green -NoNewline
+	Write-Host "$($MaxMem/1KB) TB"  
+
+	Write-Host "Max Memory         : "  -ForegroundColor Green -NoNewline
     $MaxMem = ($WmiSlots.MaxCapacity)/1MB
     Write-Host "$MaxMem GB"
 
@@ -101,11 +106,36 @@ function Show-MemorySummary { Param ( [string]$Computername = "."
 	If($UsedSlots -eq $TotalSlots) { 
 	    	Write-Host "All memory slots are in use. No available slots!" -ForegroundColor Yellow 
 	} 
-	Write-Host
 }
 
-function Show-ProcessorSummary {
-	Get-WmiObject Win32_Processor | Select-Object DeviceID, ProcessorType, Version, Caption, Characteristics, Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, SecondLevelAddressTranslationExtensions, ThreadCount,  UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions | Format-List
-}
+function Show-MemorySummaryFlat { Param ( [string]$Computername = ".") 
+	#cls
+	"**MATH MAY BE WRONG ON CALCULATED FIELDS**"
+	
+	$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" -ComputerName $Computername 
+ 
+	Write-Output "Memory Modules:" 
+	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
+	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
+ 
+    $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
 
-Clear-Host; Show-AvailableCustomFunctions
+    $MaxMem = ($WmiSlots.MaxCapacityEx)/1GB
+    Write-Output "Max Memory         : $MaxMem GB"  
+	Write-Output "Max Memory         : $($MaxMem/1KB) TB"  
+
+	Write-Output "Total Memory       : $((($PysicalMemory).Capacity | Measure-Object -Sum).Sum/1GB) GB" 
+
+	$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
+	Write-Output "Total Memory Slots : $TotalSlots"
+
+	$MaxMemInSlot = $MaxMem / $TotalSlots
+	Write-Output "Maximum Device Size: $MaxMemInSlot GB"
+ 
+	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
+	Write-Output "Used Memory Slots  : $UsedSlots "
+ 
+	If($UsedSlots -eq $TotalSlots) { 
+		Write-Output " ** All memory slots are in use. No available slots! ** "
+	}
+}
