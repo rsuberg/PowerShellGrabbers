@@ -423,10 +423,10 @@ Show-AvailableCustomfunctions | ft
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -Like "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 # 
-$fpath = (Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
-$fpath | % {
-	$sz = Get-ChildItem $_ -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum
-	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $_
-	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
-	$sz
-}  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
+# $fpath = (Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
+# $fpath | % {
+#	$sz = Get-ChildItem $_ -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum
+#	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $_
+#	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
+#	$sz
+# }  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
