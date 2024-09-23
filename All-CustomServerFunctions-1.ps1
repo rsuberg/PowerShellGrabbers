@@ -273,9 +273,13 @@ function Show-AvailableCustomfunctions {
 	write-output " "
 }
 
-Function Show-ShareInfo { param ([switch]$ShowSize, [switch]$OnlyFolders, [switch]$OnlyPrinters, [switch]$IndividualSize, [switch]$Quiet, [switch]$Listing, [switch]$Table, [switch]$CSV)
+Function Show-ShareInfo { param ([switch]$ShowSize, [switch]$OnlyFolders, [switch]$OnlyPrinters, [switch]$IndividualSize, [switch]$Quiet, [switch]$Listing, [switch]$Table, [switch]$CSV, [switch]$AdminShares)
 	if($Quiet) {$ErrAct = "SilentlyContinue"} else {$ErrAct = $ErrorActionPreference}
-	$Shares = Get-SmbShare | where name -notlike "*$" | sort ShareType, Path #| ft Name, Path, ShareType
+	if($AdminShares) {
+		$Shares = Get-SmbShare | where name -like "*$" | sort ShareType, Path 
+	} else {
+		$Shares = Get-SmbShare | where name -notlike "*$" | sort ShareType, Path #| ft Name, Path, ShareType
+	}
 	$Shares | Group-Object -NoElement -Property ShareType | Format-Table -AutoSize Name, Count
 	if ($OnlyFolders) {$Shares = $Shares | WHERE ShareType -eq "FileSystemDirectory"}
 	if ($OnlyPrinters) {$Shares = $Shares | WHERE ShareType -eq "PrintQueue"}
