@@ -786,7 +786,7 @@ function Show-EOLInfo {
 	if( $ChassisString.Length -eq 0) {
 		$ChassisString = $ChassisInt
 	} else {
-		$ChassisString = ChassisString	.replace("{","").Replace("}","")
+		$ChassisString = $ChassisString.replace("{","").Replace("}","")
 	}
 	$Data | Add-Member -MemberType NoteProperty -Name ChassisStyle -value $ChassisString
     $DrvA =""
@@ -822,7 +822,7 @@ function Show-EOLInfo {
 	Show-Monitors
 	Show-DiskPartitions | sort DriveLetter | select DriveLetter, VolumeName, Partition, DiskModel | fl
     return $Data
-	$Data
+	write-host $Data
 } 
 
 function Show-Battery {
@@ -947,7 +947,7 @@ Function Show-Processor {
 }
 
 Function Show-DiskSmartInfo {
- Get-Disk | Get-StorageReliabilityCounter | sort DeviceId | fl DeviceId, FlushLatencyMax, LoadUnloadCycleCount, PowerOnHours, ReadErrorsCorrected, ReadErrorsTotal, ReadErrorsUncorrected, Temperature, Wear, WriteErrorsTotal, WriteErrorsCorrected, WriteErrorsUncorrected, WriteLatencyMax, ObjectId
+ Get-Disk | Get-StorageReliabilityCounter | sort DeviceId | select DeviceId, FlushLatencyMax, LoadUnloadCycleCount, PowerOnHours, ReadErrorsCorrected, ReadErrorsTotal, ReadErrorsUncorrected, Temperature, Wear, WriteErrorsTotal, WriteErrorsCorrected, WriteErrorsUncorrected, WriteLatencyMax
 }
 
 Function Show-DiskSummary {
