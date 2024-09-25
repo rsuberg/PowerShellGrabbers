@@ -781,7 +781,14 @@ function Show-EOLInfo {
 	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Ready -Value (Get-Tpm).TpmReady
 	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Enabled -Value (Get-Tpm).TpmEnabled
 	#$Data | Add-Member -MemberType NoteProperty -Name TPM-Ver20 -Value (Get-Tpm).ManufacturerVersionFull20
-	$Data | Add-Member -MemberType NoteProperty -Name ChassisStyle -value  ($Arr_ChassisType[(Get-WmiObject Win32_SystemEnclosure).ChassisTypes]).replace("{","").Replace("}","")
+	$ChassisInt = (Get-WmiObject Win32_SystemEnclosure).ChassisTypes
+	$ChassisString = ($Arr_ChassisType[$ChassisInt])
+	if( $ChassisString.Length -eq 0) {
+		$ChassisString = $ChassisInt
+	} else {
+		$ChassisString = ChassisString	.replace("{","").Replace("}","")
+	}
+	$Data | Add-Member -MemberType NoteProperty -Name ChassisStyle -value $ChassisString
     $DrvA =""
     $c=""
 	$DrvC=0
