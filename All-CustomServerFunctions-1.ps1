@@ -329,7 +329,7 @@ Function Show-BackupInstalled {
 	{foreach ($Product in (Get-ItemProperty $UKey -ErrorAction SilentlyContinue)){if($Product.DisplayName -and $Product.SystemComponent -ne 1){$List += $Product}}}
 	$a=$list.GetLowerBound(0)
 	$b=$list.GetUpperBound(0)
-	$Apps =  $list | ft displayname, DisplayVersion | findstr "Backup Replibit ShadowProtect"
+	$Apps =  $list | ft displayname, DisplayVersion | findstr "Backup Acronis Replibit ShadowProtect"
 	#if($null -eq $apps.count) {Write-Host "`nNo backups detected.`n"} else {
 		write-Host "`n ";$Apps; write-Host "`n"
 		#}

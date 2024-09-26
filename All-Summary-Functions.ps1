@@ -997,6 +997,10 @@ VolumeSerialNumber -autosize # math=free space
 #        }
 }
 
+function Show-VideoControllers {
+	Get-CimInstance win32_VideoController | Select-Object Description, Name, Status, VideoMemoryType, VideoProcessor, AdapterCompatibility, AdapterDACType, AdapterRAM, DeviceID | Format-Table -AutoSize -Wrap
+}
+
 <# Orvil Reference EOL:
 Client Location : Al Willeford Chevrolet/Main
 Computer Name : DESKTOP-MQ5O6JG

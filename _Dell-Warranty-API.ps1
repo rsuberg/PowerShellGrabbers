@@ -14,13 +14,13 @@ Function Dell-Authorize {
         "Content-Type" = "application/x-www-form-urlencoded"
         }
     $response = Invoke-WebRequest -Method Post -Uri $Uri1 -Body $body
-#   $response | fl
+#   $response | Format-List
     $content_arr = $response.content | ConvertFrom-Json
     $content_arr | Add-Member -MemberType NoteProperty -Name Authorized -Value (Get-Date)
     $content_arr | Add-Member -MemberType NoteProperty -Name Status -Value $response.RawContent.Split("`r")[0]
     $content_arr | Add-Member -MemberType NoteProperty -Name Expires -Value $content_arr.Authorized.AddSeconds($content_arr.expires_in)
     $acc_token = $content_arr.access_token
-    $content_arr | select Authorized, expires, expires_in, Status | fl
+    $content_arr | Select-Object Authorized, expires, expires_in, Status | Format-List
     $Global:acc_token =  $content_arr.access_token
     $Global:content_arr = $content_arr
 }
@@ -31,7 +31,7 @@ function Dell-Entitlements { param ([string]$SerialNumber)
     #Entitlements
     #Read-Host "Serial Number"
     $Error.Clear()
-    if($content_arr.Expires -lt (Get-Date)){"Authorization expired."; return}
+    if($content_arr.Expires -lt (Get-Date)) {"Authorization expired."; return}
     try {
         Clear-Host
         while ($SerialNumber.Length -eq 0) { $SerialNumber = Read-Host "Serial Number"}
@@ -45,33 +45,33 @@ function Dell-Entitlements { param ([string]$SerialNumber)
             }
         $errros = ""
         $answer = Invoke-WebRequest -Method Get -Uri $Uri2 -Body $body -Headers $headers -ErrorVariable errros -ErrorAction Continue
-        if($errros.status -ne 200) {$errros | ConvertFrom-Json | fl title, status, detail, instance}
+        if($errros.status -ne 200) {$errros | ConvertFrom-Json | Format-List title, status, detail, instance}
         $info = $answer.Content | ConvertFrom-Json #CONSIDER FOREACH(infolp in info) {.....}
         if ($info.invalid) {
             $info | Format-List serviceTag, invalid
             return
             }
-        $info | select serviceTag, invalid, productLineDescription, systemDescription, shipDate | Format-List
+        $info | Select-Object serviceTag, invalid, productLineDescription, systemDescription, shipDate | Format-List
         Write-Host "Product Ship Date: " -NoNewline
         $info.shipDate.split("T")[0]
         Write-Host "Warranty Start Date: " -NoNewline
-        ($info.entitlements | sort startDate  | select -First 1).startdate.split("T")[0]
+        ($info.entitlements | Sort-Object startDate  | Select-Object -First 1).startdate.split("T")[0]
         Write-Host "Warranty End Date: " -NoNewline
-        ($info.entitlements | sort endDate -Descending | select -First 1).enddate.split("T")[0]
+        ($info.entitlements | Sort-Object endDate -Descending | Select-Object -First 1).enddate.split("T")[0]
 
 	Write-Host 
         Write-Host "Calculated Server End of Service Life: " -NoNewline
-        $eosl = (Get-Date(($info.entitlements | sort endDate | select -First 1).startdate.split("T")[0])).AddYears(7)
+        $eosl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(7)
         $eosl.ToString().Split(" ")[0]
         if($eosl -lt (get-date)){"SERVER EOL (7Yr): TRUE"} else {"SERVER EOL (7Yr): FALSE"}
 
 	Write-Host 
         Write-Host "Calculated Workstation End of Service Life: " -NoNewline
-        $eodl = (Get-Date(($info.entitlements | sort endDate | select -First 1).startdate.split("T")[0])).AddYears(5)
+        $eodl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(5)
         $eodl.ToString().Split(" ")[0]
         if($eodl -lt (get-date)){"WORKSTATION EOL (5Yr): TRUE"} else {"WORKSTATION EOL (5Yr): FALSE"}
 
-        $info.entitlements | sort startDate, entitlementType, serviceLevelCode | Format-Table -AutoSize -Wrap
+        $info.entitlements | Sort-Object startDate, entitlementType, serviceLevelCode | Format-Table -AutoSize -Wrap
         #$info.entitlements | Format-Table -AutoSize -Wrap
         }
     catch {
@@ -100,14 +100,14 @@ function Dell-Shipped { param ([string]$SerialNumber)
     $answer = ""
     $Uri2 = "https://apigtwb2c.us.dell.com/PROD/sbil/eapi/v5/asset-components"
     $answer = Invoke-WebRequest -Method Get -Uri $Uri2 -Body $body -Headers $headers -ErrorVariable errros -ErrorAction Continue
-    if($errros.status -ne 200) {$errros | ConvertFrom-Json | fl title, status, detail, instance}
+    if($errros.status -ne 200) {$errros | ConvertFrom-Json | Format-List title, status, detail, instance}
     $info = $answer.Content | ConvertFrom-Json
         if ($info.invalid) {
         $info | Format-List serviceTag, invalid
         return
         }
     $info | Format-List id, serviceTag, orderBuid, shipDate, productCode, localChannel, productId, productLineDescription, productFamily, systemDescription, productLobDescription, countryCode, duplicated, invalid
-    $info.components | sort itemDescription,partDescription | ft -AutoSize -Wrap
+    $info.components | Sort-Object itemDescription,partDescription | Format-Table -AutoSize -Wrap
 }
     
 Function Dell-Summary { param ([string]$SerialNumber)
@@ -130,7 +130,7 @@ Function Dell-Summary { param ([string]$SerialNumber)
     $answer = ""
     $Uri2 = "https://apigtwb2c.us.dell.com/PROD/sbil/eapi/v5/asset-entitlement-components"
     $answer = Invoke-WebRequest -Method Get -Uri $Uri2 -Body $body -Headers $headers -ErrorVariable errros -ErrorAction Continue
-    if($errros.status -ne 200) {$errros | ConvertFrom-Json | fl title, status, detail, instance}
+    if($errros.status -ne 200) {$errros | ConvertFrom-Json | Format-List title, status, detail, instance}
     $info = $answer.Content | ConvertFrom-Json
         if ($info.invalid) {
         $info | Format-List serviceTag, invalid
@@ -141,25 +141,25 @@ Function Dell-Summary { param ([string]$SerialNumber)
         Write-Host "Product Ship Date: " -NoNewline
         $info.shipDate.split("T")[0]
         Write-Host "Warranty Start Date: " -NoNewline
-        ($info.entitlements | sort startDate  | select -First 1).startdate.split("T")[0]
+        ($info.entitlements | Sort-Object startDate  | Select-Object -First 1).startdate.split("T")[0]
         Write-Host "Warranty End Date: " -NoNewline
-        ($info.entitlements | sort endDate -Descending | select -First 1).enddate.split("T")[0]
+        ($info.entitlements | Sort-Object endDate -Descending | Select-Object -First 1).enddate.split("T")[0]
 
 	Write-Host 
         Write-Host "Calculated Server End of Service Life: " -NoNewline
-        $eosl = (Get-Date(($info.entitlements | sort endDate | select -First 1).startdate.split("T")[0])).AddYears(7)
+        $eosl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(7)
         $eosl.ToString().Split(" ")[0]
         if($eosl -lt (get-date)){"SERVER EOL (7Yr): TRUE"} else {"SERVER EOL (7Yr): FALSE"}
 
 	Write-Host 
         Write-Host "Calculated Workstation End of Service Life: " -NoNewline
-        $eodl = (Get-Date(($info.entitlements | sort endDate | select -First 1).startdate.split("T")[0])).AddYears(5)
+        $eodl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(5)
         $eodl.ToString().Split(" ")[0]
         if($eodl -lt (get-date)){"WORKSTATION EOL (5Yr): TRUE"} else {"WORKSTATION EOL (5Yr): FALSE"}
 
 
-    $info.entitlements | ft -AutoSize -Wrap
-    $info.components |sort itemDescription, partDescription | ft -AutoSize -Wrap
+    $info.entitlements | Format-Table -AutoSize -Wrap
+    $info.components |Sort-Object itemDescription, partDescription | Format-Table -AutoSize -Wrap
 }
     #################################################################
     ##### MULTIPLE RESPONSE PROCESSING #####
@@ -168,7 +168,7 @@ Function Dell-Summary { param ([string]$SerialNumber)
  #   $info = $answer.Content | ConvertFrom-Json
  #   Write-Host "Configurations queried: "$info.Count
  #   $info | foreach {
- #       $_ | select serviceTag, invalid, productLineDescription, systemDescription, shipDate | Format-List
+ #       $_ | Select-Object serviceTag, invalid, productLineDescription, systemDescription, shipDate | Format-List
  #       if(($_.invalid)) {
  #           Write-Host "Invalid Serial Number: " $_.servicetag
  #           } 
@@ -176,13 +176,13 @@ Function Dell-Summary { param ([string]$SerialNumber)
  #           Write-Host "Product Ship Date: " -NoNewline
  #           $_.shipDate.split("T")[0]
  #           Write-Host "Warranty Start Date: " -NoNewline
- #           ($_.entitlements | sort startDate  | select -First 1).startdate.split("T")[0]
+ #           ($_.entitlements | Sort-Object startDate  | Select-Object -First 1).startdate.split("T")[0]
  #           Write-Host "Warranty End Date: " -NoNewline
- #           ($_.entitlements | sort endDate -Descending | select -First 1).enddate.split("T")[0]
+ #           ($_.entitlements | Sort-Object endDate -Descending | Select-Object -First 1).enddate.split("T")[0]
  #           Write-Host "Calculated Server End of Service Life: " -NoNewline
- #           $eosl = (Get-Date(($_.entitlements | sort endDate -Descending | select -First 1).enddate.split("T")[0])).AddYears(7)
+ #           $eosl = (Get-Date(($_.entitlements | Sort-Object endDate -Descending | Select-Object -First 1).enddate.split("T")[0])).AddYears(7)
  #           $eosl.ToString()
- #           $_.entitlements | sort startDate, entitlementType, serviceLevelCode | Format-Table
+ #           $_.entitlements | Sort-Object startDate, entitlementType, serviceLevelCode | Format-Table
  #           #$_.entitlements | Format-Table
  #       }
 #    }
