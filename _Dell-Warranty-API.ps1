@@ -51,7 +51,7 @@ function Dell-Entitlements { param ([string]$SerialNumber)
             $info | Format-List serviceTag, invalid
             return
             }
-        $info | Select-Object serviceTag, invalid, productLineDescription, systemDescription, shipDate | Format-List
+        $info | Select-Object id, serviceTag, orderBuid, shipDate, productCode, localChannel, productId, productLineDescription, productFamily, systemDescription, productLobDescription, countryCode, duplicated, invalid | Format-List
         Write-Host "Product Ship Date: " -NoNewline
         $info.shipDate.split("T")[0]
         Write-Host "Warranty Start Date: " -NoNewline
