@@ -494,14 +494,14 @@ FUNCTION Show-Disks() {
 	write-output " "
 	#Clear-Host
 	Hostname 
-    Get-WmiObject win32_logicaldisk | where DriveType -eq 3 | format-table FileSystem, Caption,  DriveType, Size, FreeSpace, @{L='Percent Free';E={($_.FreeSpace / ($_.Size+1)*100)}}, Name, MediaType,  VolumeSerialNumber -autosize # math=free space
+    Get-WmiObject win32_logicaldisk | where DriveType -eq 3 | format-table FileSystem, Caption,  DriveType, @{l="Size";e={'{0:N0}' -f $_.Size}}, @{l="FreeSpace";e={'{0:N0}' -f $_.FreeSpace}}, @{L='Percent Free';E={[math]::round($_.FreeSpace / ($_.Size+1)*100,2)}}, Name, MediaType,  VolumeSerialNumber -autosize # math=free space
    	$drv=Get-WmiObject win32_logicaldisk | select FileSystem, Caption,  DriveType, FreeSpace, Name, MediaType, Size, VolumeSerialNumber | where DriveType -eq 3 
 	$drv | ft -autosize
     foreach ($d in $drv) {
         write-output ('Filesystem: {0}  Drive: {1}  Size: {2:N0} MB  Free: {3:N0} MB Percent Free: {4}% Drive: {5} Media:{6} ' -f $d.FileSystem, $d.caption, [math]::truncate($d.Size / 1048576), [math]::truncate($d.FreeSpace / 1048576),  [math]::truncate($d.FreeSpace / ($d.Size+1)*100), $hdtype[$d.DriveType], $MediaTypeArr[$d.mediatype])
 		write-output ('Type: {0} {1} Media {2} {3} ' -f $hdtype[$d.MediaType], $d.mediatype, $MediaTypeArr[$d.drivetype], $d.drivetype)
         }
-	Get-WmiObject  win32_pnpentity -Filter "(PNPDeviceid like '%DISK%') AND NOT (PNPDeviceid LIKE '%SNAPSHOT%')" | select caption, pnpdeviceid
+	Get-WmiObject  win32_pnpentity -Filter "(PNPDeviceid like '%DISK%') AND NOT (PNPDeviceid LIKE '%SNAPSHOT%')" | Select-Object caption, pnpdeviceid
 	write-output " "
 	$hdtype=('Unk','SCSI','ATAPI','ATA','1394','SSA','FibChasn','USB','RAID','iSCSI','SAS','SATA','SD','MMC','Virt-RES','FileBacked-Virt','StorSpc','NVMe')
 	$bustype=$hdtype
