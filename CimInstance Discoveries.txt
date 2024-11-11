@@ -1,0 +1,3 @@
+CimInstance Discoveries
+Get-CimInstance -Namespace root/wmi -ClassName WmiMonitorConnectionParams
+(Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorBasicDisplayParams | where {$_.Active -like "True"}).SupportedDisplayFeatures
