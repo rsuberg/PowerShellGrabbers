@@ -349,9 +349,25 @@ $c = $c + $b.Replace("{","")
 $a = $c | ConvertFrom-Json
 $a
 
+$drv=@()
 	$ze=gwmi win32_diskdrive | select interfacetype,mediatype,size,status,statusinfo,model,name |sort-object name | ft
 	$a=gwmi win32_diskdrive ; $c=$a | sort-object name 
-	foreach ($b in $c) {write-output "Model: " $b.model; write-output "Status: " $b.status;write-output "Type: " $b.mediatype,$b.interfacetype;write-output ("Size: {0:0} GB" -f [math]::round($b.size / 1073741824));write-output " "} 
+	foreach ($b in $c) {
+        #write-output "Model: " $b.model
+        #write-output "Status: " $b.status
+        #write-output "Type: " $b.mediatype,$b.interfacetype
+        #write-output ("Size: {0:0} GB" -f [math]::round($b.size / 1073741824));write-output " " 
+        $v = [pscustomobject]@{"Model" = $b.model
+            "Status" = $b.status
+            "Type" = $b.mediatype
+            "Interface" = $b.interfacetype
+            "Size" = ("{0:0} GB" -f [math]::round($b.size / 1073741824))
+            }
+            $v | ft
+       $drv=$drv+$v
+        }
+    
+    $drv | ft
 	$memtot=0
 	$a=gwmi win32_physicalmemory ;foreach ($b in $a) {
 		write-output ('{0} - {1:0} MB, FormFactor - {2}, Banklabel ~{3} * {4}~ PN={5} SMBIOS-Memorytype <6>' -f $b.tag, [math]::truncate($b.capacity / 1048576),$b.FormFactor,$b.BankLabel,$b.DeviceLocator,$b.PartNumber, $b.MemoryType)
