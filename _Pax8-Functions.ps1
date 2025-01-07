@@ -108,62 +108,62 @@ Function Pax8-Catalog { param([string]$VendorName ) #, [switch]$ContinueList #FU
 # Create parameter to -Continue to bypass initialization
 # Create parameter to specify filter as string to pass directly with default "&vendorName=Microsoft" and parameter -NoDefault
 	if($VendorName.length -eq 0) {$VendorName = "Microsoft"}
-    write-host '$allProd = @() and $lp=0 snf $ploop=0 MUST already be declared or this function does nothing. These variables will be changed.'
-	write-host ' $allprod = @(); $lp=0; $ploop = 0 '
-    # $allprod = @()
+    write-host '$Global:allprod = @() and $Global:lp=0 snf $Global:ploop=0 MUST already be declared or this function does nothing. These variables will be changed.'
+	write-host ' $Global:allprod = @(); $Global:lp=0; $Global:ploop = 0 '
+    # $Global:allprod = @()
     $headers=@{}
-    # $lp=0
-    # $ploop = 0
+    # $Global:lp=0
+    # $Global:ploop = 0
     $headers.Add("accept", "application/json")
     $headers.Add("authorization", "Bearer $token")
     #start loop
         $uri = 'https://api.pax8.com/v1/products/?page=$&size=200&sort=name&vendorName=%'
 		$Uri = $Uri.Replace("%",$VendorName)
-        $Uri = $Uri.Replace("$",$lp)
+        $Uri = $Uri.Replace("$",$Global:lp)
         $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
         write-host "Errors: "$err.count
 	$jsonresponse = ($response.Content | ConvertFrom-Json)
         if ($err -ne 0) {$err; break}
-        $allprod += ($response.Content | ConvertFrom-Json).content | select id, name, sku, altVendorSku, vendorName
-        $lp++
-        write-host "Total: "$allprod.Count"`n" -NoNewline
-        #Write-Host "Uniquie: "($allprod | select -Unique id).count
-        #write-host "Loop: $lp"
-        Write-Host "ploop - " $ploop
-        Write-Host "allprod.count - " $allprod.Count
-        $ploop = $allprod.Count
-        if($ploop -ne $allprod.Count) {Write-Host "End Loop"; 
+        $Global:allprod += ($response.Content | ConvertFrom-Json).content | select id, name, sku, altVendorSku, vendorName
+        $Global:lp++
+        write-host "Total: "$Global:allprod.Count"`n" -NoNewline
+        #Write-Host "Uniquie: "($Global:allprod | select -Unique id).count
+        #write-host "Loop: $Global:lp"
+        Write-Host "ploop - " $Global:ploop
+        Write-Host "allprod.count - " $Global:allprod.Count
+        $Global:ploop = $Global:allprod.Count
+        if($Global:ploop -ne $Global:allprod.Count) {Write-Host "End Loop" -BackgroundColor Green -ForegroundColor Black ; 
 		#break
 		}
-	if( $jsonresponse.page.totalElements -le $allprod.Count) {
-		write-host "All products counted: "$allprod.count
-		write-host "End loop"
+	if( $jsonresponse.page.totalElements -le $Global:allprod.Count) {
+		write-host "All products counted: "$Global:allprod.count
+		write-host "End loop" -BackgroundColor Green -ForegroundColor Black
 		break
 		}
 	 ($response.Content | ConvertFrom-Json).page
-	write-host "Ploop: $ploop"
-	write-host "Lp: $lp"
+	write-host "Ploop: $Global:ploop"
+	write-host "Lp: $Global:lp"
 	write-host "Content Count: " -nonewline
 	($response.Content|ConvertFrom-Json).content.count
     #end loop
-	#detect loop end by $ploop = $jsonresponse.page.totalElements OR $jsonresponse.content.count = 0
-	if ($ploop -eq $jsonresponse.page.totalElements) {Write-Host "End of product listing."} else {Write-Host "Continue"}
+	#detect loop end by $Global:ploop = $jsonresponse.page.totalElements OR $jsonresponse.content.count = 0
+	if ($Global:ploop -eq $jsonresponse.page.totalElements) {Write-Host "End of product listing."} else {Write-Host "Continue"}
 	#recommend option to save to CSV file
     }
 	
 Function Pax8-ResetEnvironment {
-	Write-Host "Starting: `n allprod.count " $Global:allprod.Count ",  lp $Global:lp, ploop $Global:ploop"
+	Write-Host "Starting: `n allprod.count" $Global:allprod.Count ",  lp $Global:lp, ploop $Global:ploop"
 	$Global:allprod = @()
 	$Global:lp=0
 	$Global:ploop = 0 
-	Write-Host "Ending: `n allprod.count " $Global:allprod.Count ",  lp $lGlobal:p, ploop $Global:ploop"
+	Write-Host "Ending: `n allprod.count" $Global:allprod.Count ",  lp $Global:lp, ploop $Global:ploop"
 }
 
 ##############
 Write-Host "Loaded Pax8 Functions:`n"
 Get-Item function: | findstr "Pax8-" | sort.exe
 Write-Host "`n"
-# $plooop = 0; $lp = 0; $allprod=@()
+# $Global:ploop = 0; $Global:lp = 0; $Global:allprod=@()
 break
 #End function Definition
 Clear-Host
