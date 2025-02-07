@@ -9,11 +9,22 @@ Function Dell-Authorize {
         }
     $body=@{
         "grant_type" = "client_credentials"
-        "client_id" = "l7eb5d7da059a04681a00c01796427038d"
-        "client_secret" = "833418a87b224948b9bacd5d4a7afb8a"
+        "client_id"     = "l72304bdd2017243f6b3e7e31f80f8385a"
+        "client_secret" = "d0b057616f2c4528b85ffa62499d5627"
         "Content-Type" = "application/x-www-form-urlencoded"
         }
-    $response = Invoke-WebRequest -Method Post -Uri $Uri1 -Body $body
+        <#
+        $body=@{
+            "grant_type" = "client_credentials"
+            "client_id"     =  (Get-StoredCredential -Target dell-api).UserName
+            "client_secret" = [System.Net.NetworkCredential]::new("",(Get-StoredCredential -Target dell-api).Password).Password
+            "Content-Type" = "application/x-www-form-urlencoded"
+        }
+
+        #>
+    $errvar = ""
+    $response = Invoke-WebRequest -Method Post -Uri $Uri1 -Body $body -ErrorVariable errvar -ErrorAction SilentlyContinue
+    if ($errvar.message.length -gt 1) { $errvar.message | ConvertFrom-Json | Format-List; break }
 #   $response | Format-List
     $content_arr = $response.content | ConvertFrom-Json
     $content_arr | Add-Member -MemberType NoteProperty -Name Authorized -Value (Get-Date)
@@ -187,6 +198,10 @@ Function Dell-Summary { param ([string]$SerialNumber)
  #       }
 #    }
 
+function Dell-StoreCredential {
+    $cred = get-credential -Message "Dell API Credential"
+    New-StoredCredential -Target Dell-API -UserName $cred.UserName -Password $cred.Password
+}
 Write-Host "Loaded Dell Functions:`n"
 Get-Item function: | findstr "Dell-" | sort.exe
 Write-Host "`n"
