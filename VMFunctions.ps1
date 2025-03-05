@@ -32,9 +32,9 @@ $vhds = Get-VM | where state -eq "Running" | select -expandproperty HardDrives
 write-output "Virtual Machine Configurations:"
 Get-VM | ft -AutoSize VMName, State, OperationalStatus, MemoryAssigned, AutomaticStartAction, AutomaticStopAction, Generation, ProcessorCount, {$_.networkAdapters.count},  {$_.HardDrives.count} ; `
 write-output "All Virtual Disks (file-backed):"
-$vhds | where disknumber -NotMatch "[0-9]+" | get-vhd  | ft VhdFormat, VhdType, FileSize, Size, MinimumSize, Attached, Path -AutoSize -Wrap
+  $vhds | where disknumber -NotMatch "[0-9]+" | get-vhd  | ft VhdFormat, VhdType, FileSize, Size, @{l = '%Allocated'; e = { $_.size / $_.size * 100 }; f = "0" }, MinimumSize, Attached, Path -AutoSize -Wrap
 write-output "All Virtual Disks (MB Sizes, file-backed):"
-$vhds | where disknumber -NotMatch "[0-9]+" | get-vhd  | ft VhdFormat, VhdType, @{l="FileSZ";e={$_.FileSize/1GB};f="0"}, @{l="SZ";e={$_.Size/1GB};f="0"}, @{l="MinSZ";e={$_.MinimumSize/1GB};f="0"}, Path -AutoSize -Wrap ; `
+  $vhds | where disknumber -NotMatch "[0-9]+" | get-vhd  | ft VhdFormat, VhdType, @{l = "FileSZ"; e = { $_.FileSize / 1GB }; f = "0" }, @{l = "SZ"; e = { $_.Size / 1GB }; f = "0" }, @{l = "MinSZ"; e = { $_.MinimumSize / 1GB }; f = "0" }, @{l = '%Allocated'; e = { $_.size / $_.size * 100};f = "0"}, Path -AutoSize -Wrap ; `
 write-output "Physical Disks tied to a virtual machine:"
 $vhds | where disknumber -Match "[0-9]+" | ft -autosize
 write-output "Virtual disks mapped to virtual machines:"
