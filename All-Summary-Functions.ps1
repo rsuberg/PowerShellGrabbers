@@ -392,7 +392,7 @@ $drv=@()
     $a 
 #}
 
-if(!($SkipMemorySummary)){}
+if(!($SkipMemorySummary)){
 # Based on System Management BIOS (SMBIOS) Reference Specification 3.4.0a
 # https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0a.pdf
 "=======================**"	
