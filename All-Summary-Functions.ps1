@@ -333,11 +333,13 @@ $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","OSName")
 $c = $b.Replace("}",",")
 $a =gwmi win32_processor | select Caption, DeviceID, Manufacturer, MaxClockSpeed, Name, SocketDesignation
+$cpuc = $a.count + 1 - 1
+if (!($cpuc)) {$cpuc = 1}
 $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","CPU Family")
 $b = $b.Replace("Name","CPU Name")
-$b=$b.Replace("{","")
-$c = $c + $b.Replace("}",",")
+$b = $b.Replace("{", "").Replace("}", ",")
+$c = $c + $b
 $a=gwmi win32_computersystem | select BootupState, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber, TotalPhysicalMemory, @{l="TotalMemoryInGB";e={[math]::round($_.TotalPhysicalMemory/1073741824)}}
 $b=$a | ConvertTo-Json -Depth 1
 $b=$b.replace("Manufacturer","Case Manufacturer")
@@ -346,6 +348,7 @@ $c = $c + $b.Replace("}",",")
 $a=	gwmi win32_bios | select SerialNumber
 $b=$a | ConvertTo-Json -Depth 1
 $c = $c + $b.Replace("{","")
+$c = $c.replace(",,","},{").replace("[",',"CPU":[{').replace("]","}],").replace(',,"C',',"C')
 $a = $c | ConvertFrom-Json
 $a
 
