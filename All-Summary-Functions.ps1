@@ -332,9 +332,11 @@ $a=	gwmi Win32_OperatingSystem | select PSComputerName, Caption, OSArchitecture,
 $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","OSName")
 $c = $b.Replace("}",",")
-$a =gwmi win32_processor | select Caption, DeviceID, Manufacturer, MaxClockSpeed, Name, SocketDesignation
-$cpuc = $a.count + 1 - 1
-if (!($cpuc)) {$cpuc = 1}
+	$a = gwmi win32_processor | select Caption, DeviceID, Manufacturer, MaxClockSpeed, Name, SocketDesignation, NumberOfCores, NumberOfLogicalProcessors
+$cpuc = $a.count + 1 - 1 
+    if (!($cpuc)) { $cpuc = 1 } else { $a = $a[0]}
+    $a | Add-Member -MemberType NoteProperty -Name "CPU Count" -Value $cpuc
+
 $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","CPU Family")
 $b = $b.Replace("Name","CPU Name")
