@@ -327,7 +327,7 @@ $Computername = @("localhost")
 	
  } #End ForEach Computer
 
-Function Show-PCSummary {
+Function Show-PCSummary { param([switch]$SkipMemorySummary)
 $a=	gwmi Win32_OperatingSystem | select PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version 
 $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","OSName")
@@ -392,6 +392,7 @@ $drv=@()
     $a 
 #}
 
+if(!($SkipMemorySummary)){}
 # Based on System Management BIOS (SMBIOS) Reference Specification 3.4.0a
 # https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0a.pdf
 "=======================**"	
@@ -507,7 +508,7 @@ function parseTable([array]$table, [int]$begin, [int]$end)
 $ss = gwmi Win32_systemslot | select CurrentUsage, Name, Model, SlotDesignation, Status 
 foreach ($l in $ss) {$l.CurrentUsage = $SysSlotUsage_Arr[$l.CurrentUsage]}
 $ss | ft
-
+}
 }
 
 FUNCTION Show-Disks() {
