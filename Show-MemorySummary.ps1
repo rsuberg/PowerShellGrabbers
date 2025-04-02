@@ -91,19 +91,19 @@ function Show-MemorySummary { Param ( [string]$Computername = ".", [switch]$List
 	Write-Host "$((($PysicalMemory).Capacity | Measure-Object -Sum).Sum/1GB) GB" 
 	Write-Host "Max Memory         : "  -ForegroundColor Green -NoNewline
     Write-Host "$MaxMemB GB"
-	Write-Host "Maximum Device Size: " -ForegroundColor Green -NoNewline
-	Write-Host "$MaxMemInSlot GB"
 	Write-Host "Used Memory Slots  : " -ForegroundColor Green -NoNewline
 	Write-Host $UsedSlots 
 	Write-Host "Total Memory Slots : " -ForegroundColor Green -NoNewline
 	Write-Host $TotalSlots 
+	Write-Host "Maximum Device Size: " -ForegroundColor Green -NoNewline
+	Write-Host "$MaxMemInSlot GB"
 	 
 	If($UsedSlots -eq $TotalSlots) { 
 	    	Write-Host "All memory slots are in use. No available slots!" -ForegroundColor Yellow 
 	} 
 }
 
-function Show-MemorySummaryFlat { Param ( [string]$Computername = ".") 
+function Show-MemorySummaryFlat { Param ( [string]$Computername = ".", [switch]$Listing) 
 	#cls
 	"**MATH MAY BE WRONG ON CALCULATED FIELDS**"
 	
@@ -115,15 +115,15 @@ function Show-MemorySummaryFlat { Param ( [string]$Computername = ".")
 	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
  
 	Write-Output "Memory Modules:" 
-	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
+	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Size(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
- 
-    Write-Output "Max Memory         : $MaxMem GB"  
-	Write-Output "Max Memory         : $($MaxMem/1KB) TB"  
+ 	if($Listing) {$PysicalMemory | Format-List Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber}
+
 	Write-Output "Total Memory       : $((($PysicalMemory).Capacity | Measure-Object -Sum).Sum/1GB) GB" 
+    Write-Output "Max Memory         : $MaxMem GB"  
+	Write-Output "Used Memory Slots  : $UsedSlots "
 	Write-Output "Total Memory Slots : $TotalSlots"
 	Write-Output "Maximum Device Size: $MaxMemInSlot GB"
-	Write-Output "Used Memory Slots  : $UsedSlots "
  
 	If($UsedSlots -eq $TotalSlots) { 
 		Write-Output " ** All memory slots are in use. No available slots! ** "
