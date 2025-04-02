@@ -59,7 +59,6 @@ Function ExplainMemory { Param ([int]$FormFactor, [int]$MemoryType, [int]$TypeDe
 #
 #OneLiner
 #Uses ExplainMemory and above tables
-Clear-Host
 
 #$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2"
 #$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Speed, MemoryType, Manufacturer, Model, PartNumber, SerialNumber, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}# , FormFactor, SMBIOSMemoryType, TypeDetail
@@ -67,41 +66,37 @@ Clear-Host
 #$PysicalMemory | Format-List   Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Speed, MemoryType, Manufacturer, Model, PartNumber, SerialNumber, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}# , FormFactor, SMBIOSMemoryType, TypeDetail
 
 #
-function Show-MemorySummary { Param ( [string]$Computername = "."
+function Show-MemorySummary { Param ( [string]$Computername = ".", [switch]$Listing
 	) 
 	#cls 
 	$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" -ComputerName $Computername 
+    $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
+    $MaxMemA = ($WmiSlots.MaxCapacityEx)/1MB
+    $MaxMemB = ($WmiSlots.MaxCapacity)/1MB
+	$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
+	$MaxMemInSlot = $MaxMemB / $TotalSlots
+	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
 	 
 	Write-Host "Memory Modules:" -ForegroundColor Green 
 	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
+	if($Listing) {$PysicalMemory | Format-List Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber}
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
 	 
-    $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
 
-    $MaxMem = ($WmiSlots.MaxCapacityEx)/1MB
     Write-Host "Max Memory         : " -ForegroundColor Green -NoNewline
-	Write-Host "$MaxMem GB"  
+	Write-Host "$MaxMemA GB"  
 	Write-Host "Max Memory         : " -ForegroundColor Green -NoNewline
-	Write-Host "$($MaxMem/1KB) TB"  
-
-	Write-Host "Max Memory         : "  -ForegroundColor Green -NoNewline
-    $MaxMem = ($WmiSlots.MaxCapacity)/1MB
-    Write-Host "$MaxMem GB"
-
+	Write-Host "$($MaxMemA/1KB) TB"  
 	Write-Host "Total Memory       : " -ForegroundColor Green -NoNewline
 	Write-Host "$((($PysicalMemory).Capacity | Measure-Object -Sum).Sum/1GB) GB" 
-
-	$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
-	Write-Host "Total Memory Slots : " -ForegroundColor Green -NoNewline
-	Write-Host $TotalSlots 
-	
-	$MaxMemInSlot = $MaxMem / $TotalSlots
+	Write-Host "Max Memory         : "  -ForegroundColor Green -NoNewline
+    Write-Host "$MaxMemB GB"
 	Write-Host "Maximum Device Size: " -ForegroundColor Green -NoNewline
 	Write-Host "$MaxMemInSlot GB"
-	 
-	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
 	Write-Host "Used Memory Slots  : " -ForegroundColor Green -NoNewline
 	Write-Host $UsedSlots 
+	Write-Host "Total Memory Slots : " -ForegroundColor Green -NoNewline
+	Write-Host $TotalSlots 
 	 
 	If($UsedSlots -eq $TotalSlots) { 
 	    	Write-Host "All memory slots are in use. No available slots!" -ForegroundColor Yellow 
@@ -113,29 +108,40 @@ function Show-MemorySummaryFlat { Param ( [string]$Computername = ".")
 	"**MATH MAY BE WRONG ON CALCULATED FIELDS**"
 	
 	$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" -ComputerName $Computername 
+    $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
+    $MaxMem = ($WmiSlots.MaxCapacityEx)/1GB
+	$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
+	$MaxMemInSlot = $MaxMem / $TotalSlots
+	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
  
 	Write-Output "Memory Modules:" 
 	$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB}; a="Center"}, Speed, @{n="TypeDesc";e={ExplainMemory -MemoryType $_.SMBiosMemorytype}; a="Center"}, @{n="FormFactorStr";e={ExplainMemory -FormFactor $_.formfactor}; a="Center"},  @{n="Details";e={ExplainMemory -TypeDetails $_.TypeDetail}}, Manufacturer, Model, PartNumber, SerialNumber # , FormFactor, SMBIOSMemoryType, TypeDetail, MemoryType
 	#$PysicalMemory | Format-Table -AutoSize Tag, BankLabel, DeviceLocator, @{n="Capacity(GB)";e={$_.Capacity/1GB},a="Center"}, Speed, FormFactor, MemoryType, Model, SMBIOSMemoryType, TypeDetail, Manufacturer, PartNumber, SerialNumber
  
-    $WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" -ComputerName $Computername
-
-    $MaxMem = ($WmiSlots.MaxCapacityEx)/1GB
     Write-Output "Max Memory         : $MaxMem GB"  
 	Write-Output "Max Memory         : $($MaxMem/1KB) TB"  
-
 	Write-Output "Total Memory       : $((($PysicalMemory).Capacity | Measure-Object -Sum).Sum/1GB) GB" 
-
-	$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
 	Write-Output "Total Memory Slots : $TotalSlots"
-
-	$MaxMemInSlot = $MaxMem / $TotalSlots
 	Write-Output "Maximum Device Size: $MaxMemInSlot GB"
- 
-	$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
 	Write-Output "Used Memory Slots  : $UsedSlots "
  
 	If($UsedSlots -eq $TotalSlots) { 
 		Write-Output " ** All memory slots are in use. No available slots! ** "
 	}
 }
+
+<#
+$WmiSlots = Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2" 
+$PysicalMemory = Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2" 
+$TotalSlots = (($WmiSlots).MemoryDevices | Measure-Object -Sum).Sum 
+$UsedSlots = (($PysicalMemory) | Measure-Object).Count  
+Write-Host "Total Memory Slots : "  $TotalSlots
+Write-Host "Used Memory Slots  : "  $UsedSlots
+
+$TotalSlots = ((Get-WmiObject -Class "win32_PhysicalMemoryArray" -namespace "root\CIMV2").MemoryDevices | Measure-Object -Sum).Sum 
+$UsedSlots = ((Get-WmiObject -class "win32_physicalmemory" -namespace "root\CIMV2") | Measure-Object).Count  
+Write-Host "Total Memory Slots : "  $TotalSlots
+Write-Host "Used Memory Slots  : "  $UsedSlots
+
+#>
+Show-MemorySummary
