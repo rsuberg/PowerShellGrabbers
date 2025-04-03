@@ -523,4 +523,3 @@ $Table=$true
 		$shares | Where ShareType -ne "InterprocessCommunication" | Sort-Object Path | Format-Table Name, Path, ShareState, ShareType
 	} else {
 	Write-Output "No shares exist"}
-read-host "Paused"
