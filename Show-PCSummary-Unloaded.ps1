@@ -115,8 +115,8 @@ write-output "             "
 # $DrvC = drive count
 #write-output "Number of Drives: $DrvC" 
 # $Data.Drives | Format-List
-"Show-Monitors? FUNC?"
-Show-DiskPartitions | sort DriveLetter | select DriveLetter, VolumeName, Partition, DiskModel | fl
+#Show-Monitors
+#Show-DiskPartitions | sort DriveLetter | select DriveLetter, VolumeName, Partition, DiskModel | fl
 return $Data
 write-host $Data
 
