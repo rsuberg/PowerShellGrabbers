@@ -198,10 +198,63 @@ Function Dell-Summary { param ([string]$SerialNumber)
  #       }
 #    }
 
+function Dell-Header  { param ([string]$SerialNumber)
+    #Entitlements
+    #Read-Host "Serial Number"
+    if($content_arr.Expires -lt (Get-Date)){"Authorization expired."; return}
+    Clear-Host
+    while ($SerialNumber.Length -eq 0) { $SerialNumber = Read-Host "Serial Number"}
+    # Asset Summary:
+    #  ### https://apigtwb2c.us.dell.com/PROD/sbil/eapi/v5/asset-entitlement-components
+    Clear-Host
+    $body=@{
+        "servicetag" = $SerialNumber
+    }    
+    $headers = @{
+        "Authorization" = "Bearer $acc_token"
+        "Accept" = "application/json"
+        }
+    $errros = ""
+    $answer = ""
+    $Uri2 = "https://apigtwb2c.us.dell.com/PROD/sbil/eapi/v5/asset-entitlement-components"
+    $answer = Invoke-WebRequest -Method Get -Uri $Uri2 -Body $body -Headers $headers -ErrorVariable errros -ErrorAction Continue
+    if($errros.status -ne 200) {$errros | ConvertFrom-Json | Format-List title, status, detail, instance}
+    $info = $answer.Content | ConvertFrom-Json
+        if ($info.invalid) {
+        $info | Format-List serviceTag, invalid
+        return
+        }
+############ Entitlements
+    $info | Format-List id, serviceTag, orderBuid, shipDate, productCode, localChannel, productId, productLineDescription, productFamily, systemDescription, productLobDescription, countryCode, duplicated, invalid
+        Write-Host "Product Ship Date: " -NoNewline
+        $info.shipDate.split("T")[0]
+        Write-Host "Warranty Start Date: " -NoNewline
+        ($info.entitlements | Sort-Object startDate  | Select-Object -First 1).startdate.split("T")[0]
+        Write-Host "Warranty End Date: " -NoNewline
+        ($info.entitlements | Sort-Object endDate -Descending | Select-Object -First 1).enddate.split("T")[0]
+
+	Write-Host 
+        Write-Host "Calculated Server End of Service Life: " -NoNewline
+        $eosl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(7)
+        $eosl.ToString().Split(" ")[0]
+        if($eosl -lt (get-date)){"SERVER EOL (7Yr): TRUE"} else {"SERVER EOL (7Yr): FALSE"}
+
+	Write-Host 
+        Write-Host "Calculated Workstation End of Service Life: " -NoNewline
+        $eodl = (Get-Date(($info.entitlements | Sort-Object endDate | Select-Object -First 1).startdate.split("T")[0])).AddYears(5)
+        $eodl.ToString().Split(" ")[0]
+        if($eodl -lt (get-date)){"WORKSTATION EOL (5Yr): TRUE"} else {"WORKSTATION EOL (5Yr): FALSE"}
+
+
+    $info.entitlements | Format-Table -AutoSize -Wrap
+}
+
 function Dell-StoreCredential {
     $cred = get-credential -Message "Dell API Credential"
     New-StoredCredential -Target Dell-API -UserName $cred.UserName -Password $cred.Password
 }
-Write-Host "Loaded Dell Functions:`n"
-Get-Item function: | findstr "Dell-" | sort.exe
-Write-Host "`n"
+if (!$global:NoGlobalOutput) {
+	Write-Host "Loaded Dell Functions:`n"
+	Get-Item function: | findstr "Dell-" | sort.exe
+	Write-Host "`n"
+}

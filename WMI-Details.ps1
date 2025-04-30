@@ -1,13 +1,13 @@
 #WMI Details
 Function WMI-OperatingSystemDetails {
 	#CIM_OperatingSystem
-	Get-WmiObject -Class Win32_OperatingSystem | Format-List CSName, Manufacturer, Caption, Version, BuildNumber, Debug, EncryptionLevel, LastBootUpTime, Organization, RegisteredUser
+	Get-WmiObject -Class Win32_OperatingSystem | Select-Object CSName, Manufacturer, Caption, Version, BuildNumber, Debug, LastBootUpTime, InstallDate, LocalDateTime, EncryptionLevel, NameNumberOfUsers, Organization, RegisteredUser
 }
 
 Function WMI-Processor {
 	$a = Get-WmiObject win32_processor | select Availability, CpuStatus, DeviceID, ExtClock, MaxClockSpeed, CurrentClockSpeed, PowerManagementSupported, ProcessorType, SocketDesignation, Architecture, Description, 	Manufacturer, Name, NumberOfCores, NumberOfEnabledCore, NumberOfLogicalProcessors, Role, SecondLevelAddressTranslationExtensions, UpgradeMethod, VirtualizationFirmwareEnabled, VMMonitorModeExtensions
 	if ($a.count -eq $null) {$c = 1;$b=$a} else {$c = $a.count;$b=$a[0]}
-	Write-Output "CPU Chips: $c" -nonewline
+	Write-Host "CPU Chips: $c" -nonewline
 	$b | Add-Member -MemberType NoteProperty -Name SLAT -Value $b.SecondLevelAddressTranslationExtensions
 	$b = $b | Select-Object -Property * -ExcludeProperty SecondLevelAddressTranslationExtensions
 	$b | Format-List 
@@ -35,13 +35,13 @@ Function WMI-Memory {
 	$a = Get-WmiObject Win32_PhysicalMemory 
 	$a | Format-Table -AutoSize BankLabel, @{n="Capacity(GB)";e={$_.Capacity/1GB}}, Caption, DeviceLocator, FormFactor, Manufacturer, MemoryType, Model, PartNumber, SerialNumber, PositionInRow, Speed, SKU, Tag, TypeDetail 
 	$b = ($a.capacity | Measure-Object -sum).sum/(1048576*1024)
-	Write-Output "TotalCapacity: $b GB`n" 
+	Write-Host "TotalCapacity: $b GB`n" 
 }
 
 Function WMI-CaseInfo {
 	$Arr_ChassisType = @("0-x", "Other", "Unknown", "Desktop", "Low Profile Desktop", "Pizza Box", "Mini Tower", "Tower", "Portable", "Laptop", "Notebook", "Hand Held", "Docking Station", "All in One", "Sub Notebook ", "Space-Saving", "Lunch Box", "Main System Chassis", "Expansion Chassis", "SubChassis", "Bus Expansion Chassis", "Peripheral Chassis", "Storage Chassis", "Rack Mount Chassis", "Sealed-Case PC", "Tablet", "Convertible", "Detachable")
 	$a = Get-WmiObject Win32_SystemEnclosure | select Name, Tag, Caption, ChassisTypes, LockPresent, Manufacturer, SKU, VisibleAlarm, SerialNumber
-	$a.ChassisTypes = $Arr_ChassisType[$a.ChassisTypes[0]]
+	$a.ChassisTypes = $Arr_ChassisType[$a.ChassisTypes]
 	$a 
 }
 
@@ -75,4 +75,4 @@ Function WMI-NetAdapter {
 # [int](((gwmi win32_logicaldisk | select size | Measure-Object size -Sum).sum / 1073741824)*100)/100
 # Calculate total used space across all in GB:
 #$a = (gwmi win32_logicaldisk | select size | Measure-Object size -Sum).sum; $b = (gwmi win32_logicaldisk | select FreeSpace | Measure-Object FreeSpace -Sum).Sum; [int]((($a-$b)/1073741824)*100)/100
-#Show-WMIFunctions
+if (!$global:NoGlobalOutput) {Show-WMIFunctions}

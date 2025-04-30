@@ -144,4 +144,4 @@ Write-Host "Total Memory Slots : "  $TotalSlots
 Write-Host "Used Memory Slots  : "  $UsedSlots
 
 #>
-Show-MemorySummary
+if (!$global:NoGlobalOutput) {Show-MemorySummary}

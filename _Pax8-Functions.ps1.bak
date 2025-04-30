@@ -1,0 +1,172 @@
+#Pax8 API Demo - Functions
+$Global:token = ""
+$Global:allprod = @()
+
+# Authorize
+function Pax8-Authorize {
+    $headers=@{}
+    $headers.Add("accept", "application/json")
+    $headers.Add("content-type", "application/json")
+    $response = Invoke-WebRequest -Uri 'https://api.pax8.com/v1/token' -Method POST -Headers $headers -ContentType 'application/json' -Body '{"client_id":"hl6CeaMrKdp5p3OZWybF6UFkcPAZ7syk","client_secret":"UC6aodz74R2UjhF9OnwXLYNfvDHxXc3M0px9qnKbcw_npURdPAlx8O2RgtfUOVTn","audience":"api://p8p.client","grant_type":"client_credentials"}'
+    $auth = ($response.Content | ConvertFrom-Json )
+    $auth | Add-Member -MemberType NoteProperty -Name auth_time -Value (Get-Date)
+    $auth  | Add-Member -MemberType NoteProperty -Name auth_expire -Value $auth.auth_time.AddSeconds($auth.expires_in)
+    $token = $auth.access_token
+    $auth | select token_type, auth_time, auth_expire | Format-List
+    $token | clip
+    $Global:token = $auth.access_token
+}
+
+# Provisioning Details
+Function Pax8-Provisioning{
+    $productID = Read-Host "ProductID" #"e91bba5e-a9a3-483f-b036-f80165d410e3"
+    $productID = $productID.Replace("`n","")
+    Clear-Host
+    $headers=@{}
+    $headers.Add("accept", "application/json")
+    $headers.Add("authorization", "Bearer " + $token)
+    $headers.add("productId",$productID)
+    $Uri = "https://api.pax8.com/v1/products/@/provision-details/"
+    $uri = $uri.Replace("@",$productID)
+    $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers
+    ($response.Content | ConvertFrom-Json).content | select label
+    }
+
+Function Pax8-Products {
+    # Products
+    $productID = Read-Host "ProductID" #"e91bba5e-a9a3-483f-b036-f80165d410e3"
+    $productID = $productID.Replace("`n","")
+    Clear-Host
+    $err = ""
+    $headers=@{}
+    $headers.Add("accept", "application/json")
+    $headers.Add("authorization", "Bearer $token")
+    $uri = 'https://api.pax8.com/v1/products/@'
+    $uri = $uri.Replace("@",$productID)
+    $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+    write-host "Errors: "$err.count
+    if ($err -ne 0) {$err; break}
+    ($response.Content | ConvertFrom-Json)
+    #($response.Content | ConvertFrom-Json).vendorsku | ConvertFrom-Json
+    }
+
+Function Pax8-Pricing {
+        $productID = Read-Host "ProductID" #"e91bba5e-a9a3-483f-b036-f80165d410e3"
+        $productID = $productID.Replace("`n","")
+        Clear-Host
+        "-$productid-`n"
+        $err = ""
+	$headers=@{}
+        $headers.Add("accept", "application/json")
+        $headers.Add("authorization", "Bearer $token")
+        $uri = 'https://api.pax8.com/v1/products/@' #/pricing'
+        $uri = $uri.Replace("@",$productID)
+        $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+        write-host "Errors: "$err.count
+        if ($err -ne 0) {$err; break}
+	$prodname = ($response.Content | ConvertFrom-Json).name
+	$uri=$uri+"/pricing"
+        $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+	$prodname
+        ($response.Content | ConvertFrom-Json).content | select billingterm, type, unitOfMeasurement | fl
+        ($response.Content | ConvertFrom-Json).content | select -ExpandProperty rates | ft
+	}
+
+Function Pax8-Complete {
+    ##############
+    #ALL DATA
+    $productID = Read-Host "ProductID" #"e91bba5e-a9a3-483f-b036-f80165d410e3"
+    $productID = $productID.Replace("`n","")
+    Clear-Host
+    $err = ""
+    $headers=@{}
+    $headers.Add("accept", "application/json")
+    $headers.Add("authorization", "Bearer $token")
+    $uri = 'https://api.pax8.com/v1/products/@'
+    $uri = $uri.Replace("@",$productID)
+    $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+    write-host "Errors: "$err.count
+    if ($err -ne 0) {$err; break}
+    ($response.Content | ConvertFrom-Json)
+    # ($response.Content | ConvertFrom-Json).vendorsku # | ConvertFrom-Json | ft ## TEST FOR BRACKET TO TRY TO CONVERTFROM-JSON
+    $err = ""
+    $headers=@{}
+    $headers.Add("accept", "application/json")
+    $headers.Add("authorization", "Bearer $token")
+    $uri = 'https://api.pax8.com/v1/products/@/pricing'
+    $uri = $uri.Replace("@",$productID)
+    $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+    write-host "Errors: "$err.count
+    if ($err -ne 0) {$err; break}
+    ($response.Content | ConvertFrom-Json).content | ft #| select billingterm, commitmentTerm, type, unitOfMeasurement | ft
+    ($response.Content | ConvertFrom-Json).content | select -ExpandProperty rates | ft
+    }
+
+Function Pax8-Catalog { param([string]$VendorName ) #, [switch]$ContinueList #FUNCTION NONFUNCTIONAL AS FUNCTION
+
+#Paginated list of products
+# Create parameter to -Continue to bypass initialization
+# Create parameter to specify filter as string to pass directly with default "&vendorName=Microsoft" and parameter -NoDefault
+	if($VendorName.length -eq 0) {$VendorName = "Microsoft"}
+    write-host '$Global:allprod = @() and $Global:lp=0 snf $Global:ploop=0 MUST already be declared or this function does nothing. These variables will be changed.'
+	write-host ' $Global:allprod = @(); $Global:lp=0; $Global:ploop = 0 '
+    # $Global:allprod = @()
+    $headers=@{}
+    # $Global:lp=0
+    # $Global:ploop = 0
+    $headers.Add("accept", "application/json")
+    $headers.Add("authorization", "Bearer $token")
+    #start loop
+        $uri = 'https://api.pax8.com/v1/products/?page=$&size=200&sort=name&vendorName=%'
+		$Uri = $Uri.Replace("%",$VendorName)
+        $Uri = $Uri.Replace("$",$Global:lp)
+        $response = Invoke-WebRequest -Uri $Uri -Method GET -Headers $headers -ErrorVariable Err -ErrorAction SilentlyContinue
+        write-host "Errors: "$err.count
+	$jsonresponse = ($response.Content | ConvertFrom-Json)
+        if ($err -ne 0) {$err; break}
+        $Global:allprod += ($response.Content | ConvertFrom-Json).content | select id, name, sku, altVendorSku, vendorName
+        $Global:lp++
+        write-host "Total: "$Global:allprod.Count"`n" -NoNewline
+        #Write-Host "Uniquie: "($Global:allprod | select -Unique id).count
+        #write-host "Loop: $Global:lp"
+        Write-Host "ploop - " $Global:ploop
+        Write-Host "allprod.count - " $Global:allprod.Count
+        $Global:ploop = $Global:allprod.Count
+        if($Global:ploop -ne $Global:allprod.Count) {Write-Host "End Loop" -BackgroundColor Green -ForegroundColor Black ; 
+		#break
+		}
+	if( $jsonresponse.page.totalElements -le $Global:allprod.Count) {
+		write-host "All products counted: "$Global:allprod.count
+		write-host "End loop" -BackgroundColor Green -ForegroundColor Black
+		break
+		}
+	 ($response.Content | ConvertFrom-Json).page
+	write-host "Ploop: $Global:ploop"
+	write-host "Lp: $Global:lp"
+	write-host "Content Count: " -nonewline
+	($response.Content|ConvertFrom-Json).content.count
+    #end loop
+	#detect loop end by $Global:ploop = $jsonresponse.page.totalElements OR $jsonresponse.content.count = 0
+	if ($Global:ploop -eq $jsonresponse.page.totalElements) {Write-Host "End of product listing."} else {Write-Host "Continue"}
+	#recommend option to save to CSV file
+    }
+	
+Function Pax8-ResetEnvironment {
+	Write-Host "Starting: `n allprod.count" $Global:allprod.Count ",  lp $Global:lp, ploop $Global:ploop"
+	$Global:allprod = @()
+	$Global:lp=0
+	$Global:ploop = 0 
+	Write-Host "Ending: `n allprod.count" $Global:allprod.Count ",  lp $Global:lp, ploop $Global:ploop"
+}
+
+##############
+Write-Host "Loaded Pax8 Functions:`n"
+Get-Item function: | findstr "Pax8-" | sort.exe
+Write-Host "`n"
+# $Global:ploop = 0; $Global:lp = 0; $Global:allprod=@()
+break
+#End function Definition
+Clear-Host
+$allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*datacenter*" | ft
+$allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*standard*" |ConvertTo-Csv -NoTypeInformation | clip
+$allprod | where name -NotIn @("*charity*","*education*","*nonprofit*") | where name -like "*standard*" | ft

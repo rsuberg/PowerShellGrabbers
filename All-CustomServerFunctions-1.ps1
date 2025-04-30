@@ -149,6 +149,15 @@ Function Show-ADComputers { param ([switch]$Clipboard)
 	if($Clipboard) {$comps | ConvertTo-Csv -NoTypeInformation | clip}
 }
 
+Function Show-ADComputersAll { param ([switch]$Clipboard)
+	$comps = Get-ADComputer -Filter * -Property * | sort LastLogonDate | select Name, OperatingSystem, OperatingSystemVersion, LastLogonDate, Enabled, Deleted, Description #, OperatingSystemServicePack
+	write-Host "`nComputers Counted: " $comps.count
+	$comps = $comps | sort Name
+	#$comps | ft
+	return $comps
+	if($Clipboard) {$comps | ConvertTo-Csv -NoTypeInformation | clip}
+}
+
 Function Show-OperatingSystemSpread { param ([switch]$Clipboard)
 	$comps = Get-ADComputer -Filter {OperatingSystem -NotLike "*Windows Server*"} -Property * | sort LastLogonDate | select name, operatingsystem, operatingsystemversion, lastlogondate, Description, enabled, Deleted
 	$comps | where Enabled -eq $true | group operatingsystem -NoElement | ft Name, Count -AutoSize
@@ -305,7 +314,7 @@ Function Show-ShareInfo { param ([switch]$ShowSize, [switch]$OnlyFolders, [switc
 	if($CSV) {$Shares | select ShareType, Name, Path | ConvertTo-Csv -NoTypeInformation}
 }
 
-Function Show-FolderSize { param ([string[]]$fPath, [switch]$Table, [switch]$Quiet, [switch]$CSV)
+Function Show-FolderSize { param ([string[]]$fPath, [switch]$Table, [switch]$Quiet, [switch]$CSV, [switch]$PassThru)
 	if($fPath.Length -eq 0) {$fPath = ".\*.*"}
 	$sz = Get-ChildItem $fPath -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum #| ft Property, Count, @{e={"{0:N0}" -f $_.sum};l="Sum"}
 	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $fPath
@@ -329,7 +338,7 @@ Function Show-BackupInstalled {
 	{foreach ($Product in (Get-ItemProperty $UKey -ErrorAction SilentlyContinue)){if($Product.DisplayName -and $Product.SystemComponent -ne 1){$List += $Product}}}
 	$a=$list.GetLowerBound(0)
 	$b=$list.GetUpperBound(0)
-	$Apps =  $list | ft displayname, DisplayVersion | findstr "Backup Acronis Replibit ShadowProtect"
+	$Apps =  $list | ft displayname, DisplayVersion | findstr "Backup Replibit ShadowProtect"
 	#if($null -eq $apps.count) {Write-Host "`nNo backups detected.`n"} else {
 		write-Host "`n ";$Apps; write-Host "`n"
 		#}
@@ -411,7 +420,7 @@ function Find-Files { param([parameter(Mandatory=$true)][string]$FileSpec)
 #       EA   Continue           #
 #################################
 
-&{Clear-Host 
+if (!$global:NoGlobalClear) {Clear-Host 
 $PSVersionTable.PSVersion
 if($PSVersionTable.PSVersion.Major -lt 3.0) {Write-Host " PS Version too low " -ForegroundColor White -BackgroundColor Red}
 Show-AvailableCustomfunctions | ft
@@ -423,10 +432,28 @@ Show-AvailableCustomfunctions | ft
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 #(Get-SmbShare | where {($_.path -ne "") -and ($_.name -Like "*$")}).path | % {Show-FolderSize $_ -Quiet| select folderpath, sizegb, sum} | ft FolderPath, @{e={"{0:N0}" -f $_.sum};l="Size"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB"} -AutoSize
 # 
-# $fpath = (Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
-# $fpath | % {
-#	$sz = Get-ChildItem $_ -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum
-#	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $_
-#	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
-#	$sz
-# }  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
+$fpath = (Get-SmbShare | where {($_.path -ne "") -and ($_.name -NotLike "*$")}).path
+$fpath | % {
+	$sz = Get-ChildItem $_ -Recurse -ErrorAction SilentlyContinue | Measure-Object Length -Sum
+	$sz | Add-Member -MemberType NoteProperty -Name FolderPath -Value $_
+	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
+	$sz
+}  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
+
+{
+    "ReturnCode":  0,
+    "ReturnReason":  "",
+    "Logging":  {
+                    "SecureBoot":  "",
+                    "Stprage":  "",
+                    "Memory":  0,
+                    "Processor":  {
+                                      "AddressWidth":  0,
+                                      "Manufacturer":  "",
+                                      "MaxClockSpeed":  0,
+                                      "LogicalCores":  0
+                                  },
+                    "TPM":  0
+                },
+    "ReturnResult":  ""
+}
