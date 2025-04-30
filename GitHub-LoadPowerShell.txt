@@ -39,20 +39,20 @@ $uri = 'https://raw.githubusercontent.com/rsuberg/PowerShellGrabbers/refs/heads/
 @('_Dell-Warranty-API.ps1','_Pax8-Functions.ps1') | % {$d = "https://raw.githubusercontent.com/rsuberg/PowerShellGrabbers/main/" + $_;iex ( iwr -usebasicparsing -Uri $d ).content;"#"}
 
 #ProgressBar Status
-CLS
-$global:Count = 0; $Global:NoGlobalClear = $true; $Global:NoGlobalOutput = $true
+CLS; Write-host "`n`n`n`n`n`n`n`n"
+$Global:Count = 0; $Global:NoGlobalClear = $true; $Global:NoGlobalOutput = $true
 @('All-CustomServerFunctions-1.ps1','All-Summary-Functions.ps1','Show-MemorySummary.ps1','WMI-Details.ps1','VMFunctions.ps1','_Dell-Warranty-API.ps1','_Pax8-Functions.ps1') | 
    % {
-      $Global:Count ++; $Global:Count; $Global:ScrName = $_
+      $Global:Count ++; write-host -nonewline "$Global:Count `t "; $Global:ScrName = $_
       Write-Progress -Activity "Loading Web PowerShell Functions" -Status $_ -PercentComplete (($global:Count/7)*100)
       $d = "https://raw.githubusercontent.com/rsuberg/PowerShellGrabbers/main/" + $_;
-	  "$_ `t`t$d"
+	  "$_ `t`t" #$d
 	  $c = iwr -Uri $d -UseBasicParsing
 	  #$c | fl StatusCode, StatusDescription, RawContentLength
 	  $x = iex $c.content;
 	  Sleep 3
    }
-   $Global:Count; $Global:ScrName
+   write-host "$Global:Count `t $Global:ScrName"
    
 cls
 Show-AvailableCustomfunctions

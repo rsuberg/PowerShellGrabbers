@@ -167,7 +167,7 @@ if (!$global:NoGlobalOutput) {
 	# $Global:ploop = 0; $Global:lp = 0; $Global:allprod=@()
 }
 #End function Definition
-Clear-Host
+if (!$global:NoGlobalClear) {Clear-Host}
 # $allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*datacenter*" | ft
 # $allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*standard*" |ConvertTo-Csv -NoTypeInformation | clip
 # $allprod | where name -NotIn @("*charity*","*education*","*nonprofit*") | where name -like "*standard*" | ft

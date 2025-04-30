@@ -160,13 +160,14 @@ Function Pax8-ResetEnvironment {
 }
 
 ##############
-Write-Host "Loaded Pax8 Functions:`n"
-Get-Item function: | findstr "Pax8-" | sort.exe
-Write-Host "`n"
-# $Global:ploop = 0; $Global:lp = 0; $Global:allprod=@()
-break
+if (!$global:NoGlobalOutput) {
+	Write-Host "Loaded Pax8 Functions:`n"
+	Get-Item function: | findstr "Pax8-" | sort.exe
+	Write-Host "`n"
+	# $Global:ploop = 0; $Global:lp = 0; $Global:allprod=@()
+}
 #End function Definition
 Clear-Host
-$allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*datacenter*" | ft
-$allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*standard*" |ConvertTo-Csv -NoTypeInformation | clip
-$allprod | where name -NotIn @("*charity*","*education*","*nonprofit*") | where name -like "*standard*" | ft
+# $allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*datacenter*" | ft
+# $allprod | where name -notlike "*charity*" | where name -notlike "*education*" | where name -notlike "*nonprofit*" | where name -like "*standard*" |ConvertTo-Csv -NoTypeInformation | clip
+# $allprod | where name -NotIn @("*charity*","*education*","*nonprofit*") | where name -like "*standard*" | ft
