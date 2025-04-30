@@ -439,7 +439,7 @@ $fpath | % {
 	$sz | Add-Member -MemberType NoteProperty -Name SizeGB -Value ($sz.sum / 1GB)
 	$sz
 }  | ft @{e={"{0:N0}" -f $_.sum};l="Size";a="R"}, @{e={"{0:N3}" -f $_.SizeGB};l="GB";a="Right"}, FolderPath -AutoSize
-
+<#
 {
     "ReturnCode":  0,
     "ReturnReason":  "",
@@ -457,3 +457,4 @@ $fpath | % {
                 },
     "ReturnResult":  ""
 }
+#>
