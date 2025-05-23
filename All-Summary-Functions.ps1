@@ -113,16 +113,16 @@ function Show-IP { param ([switch]$Virtual, [switch]$Physical, [switch]$Up, [swi
 function Show-Info() {
 	$memtot=0
 	#Get-ComputerInfo | select WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer, OsArchitecture | FL
-	gwmi Win32_OperatingSystem | select PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | FL
+	Get-WmiObject Win32_OperatingSystem | Select-Object PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | Format-List
 if($PSVersionTable.psversion.ToString() -gt 2.5) {
-		Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -Property Caption, LastBootupTime, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | FL
+		Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -Property Caption, LastBootupTime, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | Format-List
 	}
 
-	gwmi win32_processor | fl Manufacturer, Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, LoadPercentage
-	gwmi win32_bios | fl
-	gwmi win32_computersystem | select bootupstate, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber | FL
-	gwmi win32_diskdrive | select interfacetype,mediatype,size,status,statusinfo,model,name |sort-object name | ft
-	$a=gwmi win32_diskdrive ; $c=$a | sort-object name 
+	Get-WmiObject win32_processor | Format-List Manufacturer, Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, LoadPercentage
+	Get-WmiObject win32_bios | Format-List
+	Get-WmiObject win32_computersystem | Select-Object bootupstate, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber | Format-List
+	Get-WmiObject win32_diskdrive | Select-Object interfacetype,mediatype,size,status,statusinfo,model,name |sort-object name | Format-Table
+	$a=Get-WmiObject win32_diskdrive ; $c=$a | sort-object name 
 	foreach ($b in $c) {
 		write-output ("Model : " + $b.model)
 		write-output ("Status: " + $b.status)
@@ -132,14 +132,14 @@ if($PSVersionTable.psversion.ToString() -gt 2.5) {
 		write-output " "
 		} 
 	$memtot=0
-	$a=gwmi win32_physicalmemory ;foreach ($b in $a) {
+	$a=Get-WmiObject win32_physicalmemory ;foreach ($b in $a) {
 		write-output ('{0} - {1:0} MB, FormFactor - {2}, Banklabel ~{3} * {4}~ PN={5} SMBIOS-Memorytype <6>' -f $b.tag, [math]::truncate($b.capacity / 1048576),$b.FormFactor,$b.BankLabel,$b.DeviceLocator,$b.PartNumber, $b.MemoryType)
 		$memtot=$memtot+($b.capacity/1048576)
 		}
     write-output " "
 	write-output ('Total memory: {0:0}  MB   {1:0} GB ' -f $memtot, [math]::Truncate($memtot/1024 ) )
     write-output " "
-	get-tpm | ft TpmPresent, TpmReady, TpmEnabled, TpmActivated, ManufacturerVersionFull20 -AutoSize
+	get-tpm | Format-Table TpmPresent, TpmReady, TpmEnabled, TpmActivated, ManufacturerVersionFull20 -AutoSize
 	}
 
 function Show-MemoryDetail {
@@ -207,7 +207,7 @@ function parseTable([array]$table, [int]$begin, [int]$end)
  "Memory type: 0x{0:X2} ({1})" -f $type, $(lookUp $MEMORY_TYPES $type)
 
  $typeDetail = [BitConverter]::ToUInt16($table, $index + 0x13)
- $details = 0..15 |% {
+ $details = 0..15 |ForEach-Object {
  if (((1 -shl $_) -band $typeDetail) -ne 0) { "{0}" -f $TYPE_DETAILS[$_] }
  }
   "Type detail: 0x{0:X2} ({1})" -f $typeDetail, $($details -join ' | ')
