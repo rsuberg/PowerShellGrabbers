@@ -113,16 +113,16 @@ function Show-IP { param ([switch]$Virtual, [switch]$Physical, [switch]$Up, [swi
 function Show-Info() {
 	$memtot=0
 	#Get-ComputerInfo | select WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer, OsArchitecture | FL
-	Get-WmiObject Win32_OperatingSystem | Select-Object PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | Format-List
+	gwmi Win32_OperatingSystem | select PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | FL
 if($PSVersionTable.psversion.ToString() -gt 2.5) {
-		Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -Property Caption, LastBootupTime, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | Format-List
+		Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -Property Caption, LastBootupTime, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version, InstallDate, NumberOfLicensedUsers | FL
 	}
 
-	Get-WmiObject win32_processor | Format-List Manufacturer, Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, LoadPercentage
-	Get-WmiObject win32_bios | Format-List
-	Get-WmiObject win32_computersystem | Select-Object bootupstate, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber | Format-List
-	Get-WmiObject win32_diskdrive | Select-Object interfacetype,mediatype,size,status,statusinfo,model,name |sort-object name | Format-Table
-	$a=Get-WmiObject win32_diskdrive ; $c=$a | sort-object name 
+	gwmi win32_processor | fl Manufacturer, Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, LoadPercentage
+	gwmi win32_bios | fl
+	gwmi win32_computersystem | select bootupstate, AutomaticResetBootOption, ChassisSKUNumber, Manufacturer, Model, SystemFamily, SystemSKUNumber | FL
+	gwmi win32_diskdrive | select interfacetype,mediatype,size,status,statusinfo,model,name |sort-object name | ft
+	$a=gwmi win32_diskdrive ; $c=$a | sort-object name 
 	foreach ($b in $c) {
 		write-output ("Model : " + $b.model)
 		write-output ("Status: " + $b.status)
@@ -132,14 +132,14 @@ if($PSVersionTable.psversion.ToString() -gt 2.5) {
 		write-output " "
 		} 
 	$memtot=0
-	$a=Get-WmiObject win32_physicalmemory ;foreach ($b in $a) {
+	$a=gwmi win32_physicalmemory ;foreach ($b in $a) {
 		write-output ('{0} - {1:0} MB, FormFactor - {2}, Banklabel ~{3} * {4}~ PN={5} SMBIOS-Memorytype <6>' -f $b.tag, [math]::truncate($b.capacity / 1048576),$b.FormFactor,$b.BankLabel,$b.DeviceLocator,$b.PartNumber, $b.MemoryType)
 		$memtot=$memtot+($b.capacity/1048576)
 		}
     write-output " "
 	write-output ('Total memory: {0:0}  MB   {1:0} GB ' -f $memtot, [math]::Truncate($memtot/1024 ) )
     write-output " "
-	get-tpm | Format-Table TpmPresent, TpmReady, TpmEnabled, TpmActivated, ManufacturerVersionFull20 -AutoSize
+	get-tpm | ft TpmPresent, TpmReady, TpmEnabled, TpmActivated, ManufacturerVersionFull20 -AutoSize
 	}
 
 function Show-MemoryDetail {
@@ -207,7 +207,7 @@ function parseTable([array]$table, [int]$begin, [int]$end)
  "Memory type: 0x{0:X2} ({1})" -f $type, $(lookUp $MEMORY_TYPES $type)
 
  $typeDetail = [BitConverter]::ToUInt16($table, $index + 0x13)
- $details = 0..15 |ForEach-Object {
+ $details = 0..15 |% {
  if (((1 -shl $_) -band $typeDetail) -ne 0) { "{0}" -f $TYPE_DETAILS[$_] }
  }
   "Type detail: 0x{0:X2} ({1})" -f $typeDetail, $($details -join ' | ')
@@ -327,7 +327,7 @@ $Computername = @("localhost")
 	
  } #End ForEach Computer
 
-Function Show-PCSummary {
+Function Show-PCSummary { param ( [Switch]$SkipMemorySummary)
 $a=	gwmi Win32_OperatingSystem | select PSComputerName, Caption, OSArchitecture, TotalVirtualMemorySize, TotalVisibleMemorySize, Version 
 $b=$a | ConvertTo-Json -Depth 1
 $b = $b.Replace("Caption","OSName")
@@ -391,119 +391,121 @@ $drv=@()
     foreach ($b in $a) {$b | Add-Member -MemberType NoteProperty -Name BusInt -Value $hdtype[$b.bustype]}
     $a 
 #}
+if(!($SkipMemorySummary)) {
+	# Based on System Management BIOS (SMBIOS) Reference Specification 3.4.0a
+	# https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0a.pdf
+	"=======================**"	
+	
+	# 7.18.1. Form factor @offset 0x0E
+	[string[]]$FORM_FACTORS = @(
+	'Invalid', 'Other', 'Unknown', 'SIMM', # 00-03h
+	'SIP', 'Chip', 'DIP', 'ZIP', # 04-07h
+	'Proprietary Card', 'DIMM', 'TSOP', 'Row of chips', # 08-0Bh
+	'RIMM', 'SODIMM', 'SRIMM', 'FB-DIMM', # 0C-0Fh
+	'Die' # 10h
+	)
+	# 7.18.2. Memory type @offset 0x12
+	[string[]]$MEMORY_TYPES = @(
+	'Invalid', 'Other', 'Unknown', 'DRAM', # 00-03h
+	'EDRAM', 'VRAM', 'SRAM', 'RAM', # 04-07h
+	'ROM', 'FLASH', 'EEPROM', 'FEPROM', # 08-0Bh
+	'EPROM', 'CDRAM', '3DRAM', 'SDRAM', # 0C-0Fh
+	'SGRAM', 'RDRAM', 'DDR', 'DDR2', # 10-13h
+	'DDR2 FB-DIMM', 'Reserved', 'Reserved', 'Reserved', # 14-17h
+	'DDR3', 'FBD2', 'DDR4', 'LPDDR', # 18-1Bh
+	'LPDDR2', 'LPDDR3', 'LPDDR4', 'Logical non-volatile device' # 1C-1Fh
+	'HBM (High Bandwidth Memory)', 'HBM2 (High Bandwidth Memory Generation 2)',
+	'DDR5', 'LPDDR5' # 20-23h
+	)
+	# 7.18.3. Type detail @offset 0x13
+	[string[]]$TYPE_DETAILS = @(
+	'Reserved', 'Other', 'Unknown', 'Fast-paged', # bit 0-3
+	'Static column', 'Pseudo-static', 'RAMBUS', 'Synchronous', # bit 4-7
+	'CMOS', 'EDO', 'Window DRAM', 'Cache DRAM', # bit 8-11
+	'Non-volatile', 'Registered (Buffered)',
+	'Unbuffered (Unregistered)', 'LRDIMM' # 0C-0Fh
+	)
+	
+	function lookUp([string[]]$table, [int]$value)
+	{
+	if ($value -ge 0 -and $value -lt $table.Length) {
+			$table[$value]
+		} else {
+			"Unknown value 0x{0:X}" -f $value
+		}
+	}
 
-# Based on System Management BIOS (SMBIOS) Reference Specification 3.4.0a
-# https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0a.pdf
-"=======================**"	
+	function parseTable([array]$table, [int]$begin, [int]$end)
+	{
+	[int]$index = $begin
+	$size = [BitConverter]::ToUInt16($table, $index + 0x0C)
+	if ($size -eq 0xFFFF) {
+	"Unknown memory size"
+	} elseif ($size -ne 0x7FFF) {
+	if (($size -shr 15) -eq 0) { $size *= 1MB } else { $size *= 1KB }
+	} else {
+	$size = [BitConverter]::ToUInt32($table, $index + 0x1C)
+	}
+	"Size: {0:N0} bytes ({1} GB)" -f $size, ($size/1GB)
+	
+	$formFactor = $table[$index + 0x0E]
+	$formFactorStr = $(lookUp $FORM_FACTORS $formFactor)
+	"Memory form factor: 0x{0:X2} {1}" -f $formFactor, $formFactorStr
+	
+	$type = $table[$index + 0x12]
+	"Memory type: 0x{0:X2} ({1})" -f $type, $(lookUp $MEMORY_TYPES $type)
+	
+	$typeDetail = [BitConverter]::ToUInt16($table, $index + 0x13)
+	$details = 0..15 |% {
+	if (((1 -shl $_) -band $typeDetail) -ne 0) { "{0}" -f $TYPE_DETAILS[$_] }
+	}
+	"Type detail: 0x{0:X2} ({1})" -f $typeDetail, $($details -join ' | ')
+	
+	$speed = [BitConverter]::ToUInt16($table, $index + 0x15)
+	if ($speed -eq 0) {
+	"Unknown speed"
+	} elseif ($speed -ne 0xFFFF) {
+	"Speed: {0:N0} MT/s" -f $speed
+	} else {
+	"Speed: {0:N0} MT/s" -f [BitConverter]::ToUInt32($table, $index + 0x54)
+	}
+	"======================="
+	}
+	
+	$index = 0
+	
+	$END_OF_TABLES = 127
+	$MEMORY_DEVICE = 17
+	
+	$BiosTables = (Get-WmiObject -ComputerName . -Namespace root\wmi -Query `
+	"SELECT SMBiosData FROM MSSmBios_RawSMBiosTables" `
+	).SMBiosData
+	
+	do
+	{
+	$startIndex = $index
+	
+	# ========= Parse table header =========
+	$tableType = $BiosTables[$index]
+	if ($tableType -eq $END_OF_TABLES) { break }
+	
+	$tableLength = $BiosTables[$index + 1]
+	# $tableHandle = [BitConverter]::ToUInt16($BiosTables, $index + 2)
+	$index += $tableLength
+	
+	# ========= Parse unformatted part =========
+	# Find the '\0\0' structure termination
+	while ([BitConverter]::ToUInt16($BiosTables, $index) -ne 0) { $index++ }
+	$index += 2
+	
+	# adjustment when the table ends with a string
+	if ($BiosTables[$index] -eq 0) { $index++ }
+	
+	if ($tableType -eq $MEMORY_DEVICE) { parseTable $BiosTables $startIndex $index }
+	} until ($tableType -eq $END_OF_TABLES -or $index -ge $BiosTables.length)
+	$SysSlotUsage_Arr=@("Reserved","Other","Unknown","Available","In Use")
+} #End MemorySummary
 
-# 7.18.1. Form factor @offset 0x0E
-[string[]]$FORM_FACTORS = @(
-'Invalid', 'Other', 'Unknown', 'SIMM', # 00-03h
-'SIP', 'Chip', 'DIP', 'ZIP', # 04-07h
-'Proprietary Card', 'DIMM', 'TSOP', 'Row of chips', # 08-0Bh
-'RIMM', 'SODIMM', 'SRIMM', 'FB-DIMM', # 0C-0Fh
-'Die' # 10h
-)
-# 7.18.2. Memory type @offset 0x12
-[string[]]$MEMORY_TYPES = @(
-'Invalid', 'Other', 'Unknown', 'DRAM', # 00-03h
-'EDRAM', 'VRAM', 'SRAM', 'RAM', # 04-07h
-'ROM', 'FLASH', 'EEPROM', 'FEPROM', # 08-0Bh
-'EPROM', 'CDRAM', '3DRAM', 'SDRAM', # 0C-0Fh
-'SGRAM', 'RDRAM', 'DDR', 'DDR2', # 10-13h
-'DDR2 FB-DIMM', 'Reserved', 'Reserved', 'Reserved', # 14-17h
-'DDR3', 'FBD2', 'DDR4', 'LPDDR', # 18-1Bh
-'LPDDR2', 'LPDDR3', 'LPDDR4', 'Logical non-volatile device' # 1C-1Fh
-'HBM (High Bandwidth Memory)', 'HBM2 (High Bandwidth Memory Generation 2)',
-'DDR5', 'LPDDR5' # 20-23h
-)
-# 7.18.3. Type detail @offset 0x13
-[string[]]$TYPE_DETAILS = @(
-'Reserved', 'Other', 'Unknown', 'Fast-paged', # bit 0-3
-'Static column', 'Pseudo-static', 'RAMBUS', 'Synchronous', # bit 4-7
-'CMOS', 'EDO', 'Window DRAM', 'Cache DRAM', # bit 8-11
-'Non-volatile', 'Registered (Buffered)',
-'Unbuffered (Unregistered)', 'LRDIMM' # 0C-0Fh
-)
-
-function lookUp([string[]]$table, [int]$value)
-{
- if ($value -ge 0 -and $value -lt $table.Length) {
- $table[$value]
- } else {
- "Unknown value 0x{0:X}" -f $value
- }
-}
-
-function parseTable([array]$table, [int]$begin, [int]$end)
-{
- [int]$index = $begin
- $size = [BitConverter]::ToUInt16($table, $index + 0x0C)
- if ($size -eq 0xFFFF) {
-  "Unknown memory size"
- } elseif ($size -ne 0x7FFF) {
- if (($size -shr 15) -eq 0) { $size *= 1MB } else { $size *= 1KB }
- } else {
- $size = [BitConverter]::ToUInt32($table, $index + 0x1C)
- }
- "Size: {0:N0} bytes ({1} GB)" -f $size, ($size/1GB)
-
- $formFactor = $table[$index + 0x0E]
- $formFactorStr = $(lookUp $FORM_FACTORS $formFactor)
- "Memory form factor: 0x{0:X2} {1}" -f $formFactor, $formFactorStr
-
- $type = $table[$index + 0x12]
- "Memory type: 0x{0:X2} ({1})" -f $type, $(lookUp $MEMORY_TYPES $type)
-
- $typeDetail = [BitConverter]::ToUInt16($table, $index + 0x13)
- $details = 0..15 |% {
- if (((1 -shl $_) -band $typeDetail) -ne 0) { "{0}" -f $TYPE_DETAILS[$_] }
- }
-  "Type detail: 0x{0:X2} ({1})" -f $typeDetail, $($details -join ' | ')
-
-  $speed = [BitConverter]::ToUInt16($table, $index + 0x15)
-  if ($speed -eq 0) {
-  "Unknown speed"
-  } elseif ($speed -ne 0xFFFF) {
-   "Speed: {0:N0} MT/s" -f $speed
-  } else {
-   "Speed: {0:N0} MT/s" -f [BitConverter]::ToUInt32($table, $index + 0x54)
-  }
- "======================="
- }
-
- $index = 0
-
- $END_OF_TABLES = 127
- $MEMORY_DEVICE = 17
-
- $BiosTables = (Get-WmiObject -ComputerName . -Namespace root\wmi -Query `
- "SELECT SMBiosData FROM MSSmBios_RawSMBiosTables" `
- ).SMBiosData
-
- do
- {
-  $startIndex = $index
-
-  # ========= Parse table header =========
-  $tableType = $BiosTables[$index]
-  if ($tableType -eq $END_OF_TABLES) { break }
-
-  $tableLength = $BiosTables[$index + 1]
-  # $tableHandle = [BitConverter]::ToUInt16($BiosTables, $index + 2)
-  $index += $tableLength
-
-  # ========= Parse unformatted part =========
-  # Find the '\0\0' structure termination
-  while ([BitConverter]::ToUInt16($BiosTables, $index) -ne 0) { $index++ }
-  $index += 2
-
-  # adjustment when the table ends with a string
-  if ($BiosTables[$index] -eq 0) { $index++ }
-
-  if ($tableType -eq $MEMORY_DEVICE) { parseTable $BiosTables $startIndex $index }
- } until ($tableType -eq $END_OF_TABLES -or $index -ge $BiosTables.length)
- $SysSlotUsage_Arr=@("Reserved","Other","Unknown","Available","In Use")
 $ss = gwmi Win32_systemslot | select CurrentUsage, Name, Model, SlotDesignation, Status 
 foreach ($l in $ss) {$l.CurrentUsage = $SysSlotUsage_Arr[$l.CurrentUsage]}
 $ss | ft
@@ -915,9 +917,13 @@ function Show-AllCustomFunctions {
 	$Global:FunctionProcess = "None"
 }
 
-function Show-AvailableCustomfunctions {
+function Show-AvailableCustomfunctions ([Switch]$NoClear) {
 	write-output " "
-	Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
+	if($NoClear) {
+		Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" 
+	} else {
+		Get-Item -Path function:\  | findstr "Show- Dell- Pax8-" | Sort.exe # Name# Format-Table CommandType, Name |
+	}
 	write-output " "
 }
 
