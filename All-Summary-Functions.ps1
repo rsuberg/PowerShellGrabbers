@@ -608,6 +608,10 @@ Function Show-DriveList { # TODO: Explain DriveType, MediaType
 	gwmi win32_pnpentity | where pnpclass -eq "CDROM" | select caption, name, present, status, statusinfo | ft
 }
 
+Function Show-PhysicalDiskHealth {
+	 Get-PhysicalDisk | sort DeviceId | format-table DeviceId, FriendlyName, Manufacturer, Model, OperationalStatus, HealthStatus, BusType, MediaType, @{l="SizeGB";e={($_.Size/1GB).ToString("N3")};a="Right"}, PhysicalLocation  -AutoSize -Wrap
+}
+
 function Show-SlotUsage {
 	$SysSlotUsage_Arr=@("Reserved","Other","Unknown","Available","In Use")
 	$ConnType_Arr=@("Unknown","Other",'M','F','Shielded','Unshielded')
