@@ -1,0 +1,9 @@
+# NEW FUNCTION SHOW-VMSUMMARY
+#
+# Summarizes VM information.
+# Sum all VHDs attached - VHDSize, FileSize, MinimumSize, Count Fixed vs Dynamic, VHD vs VHDX
+# Sum Memory: Startup, Assigned
+# Sum Processor Counts
+# Count VMs that Start
+# Determine VM Start Delay 
+# Count VM's running
